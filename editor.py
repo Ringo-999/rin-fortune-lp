@@ -60,6 +60,7 @@ EDITOR_JS = r"""
     doc.querySelectorAll('.rin-sec-active').forEach(n=>{n.classList.remove('rin-sec-active');if(!n.classList.length)n.removeAttribute('class');});
     doc.querySelectorAll('[contenteditable]').forEach(n=>{n.removeAttribute('contenteditable');n.classList.remove('rin-editable');if(!n.classList.length)n.removeAttribute('class');});
     doc.querySelectorAll('.aos-init,.aos-animate').forEach(n=>n.classList.remove('aos-init','aos-animate'));
+    doc.querySelectorAll('img').forEach(n=>{n.removeAttribute('title');n.removeAttribute('style');n.src=n.getAttribute('src').split('?')[0];});
     doc.querySelectorAll('[data-aos]').forEach(n=>{n.removeAttribute('style')});
     doc.querySelectorAll('body').forEach(b=>b.removeAttribute('style'));
     return '<!DOCTYPE html>\n' + doc.outerHTML;
