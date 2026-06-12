@@ -56,7 +56,8 @@ EDITOR_JS = r"""
 
   function cleanHTML(){
     const doc = document.documentElement.cloneNode(true);
-    doc.querySelectorAll('#rin-editor-bar,#rin-editor-style,script[data-rin-editor]').forEach(n=>n.remove());
+    doc.querySelectorAll('#rin-editor-bar,#rin-editor-style,#rin-editor-style2,script[data-rin-editor],.rin-sec-tools').forEach(n=>n.remove());
+    doc.querySelectorAll('.rin-sec-active').forEach(n=>{n.classList.remove('rin-sec-active');if(!n.classList.length)n.removeAttribute('class');});
     doc.querySelectorAll('[contenteditable]').forEach(n=>{n.removeAttribute('contenteditable');n.classList.remove('rin-editable');if(!n.classList.length)n.removeAttribute('class');});
     doc.querySelectorAll('.aos-init,.aos-animate').forEach(n=>n.classList.remove('aos-init','aos-animate'));
     doc.querySelectorAll('[data-aos]').forEach(n=>{n.removeAttribute('style')});
@@ -66,7 +67,7 @@ EDITOR_JS = r"""
   async function post(url){
     status.textContent = url === '/save' ? '保存中…' : '公開中…(1分ほど)';
     try{
-      const r = await fetch(url,{method:'POST',headers:{'Content-Type':'text/html'},body:cleanHTML()});
+      const r = await fetch(url,{method:'POST',headers:{'Content-Type':'text/html'},body:(window.__rinClean||cleanHTML)()});
       const j = await r.json();
       status.textContent = j.ok ? (url==='/save' ? '✅ 保存しました' : '✅ 公開しました！') : '❌ ' + j.error;
     }catch(e){ status.textContent = '❌ 通信エラー'; }
@@ -107,6 +108,112 @@ EDITOR_JS = r"""
         status.textContent = '✅ 画像を差し替えました（保存も完了）';
       } else status.textContent = '❌ ' + j.error;
     }catch(e){ status.textContent = '❌ アップロード失敗'; }
+  };
+
+  // ===== セクション編集（並べ替え・表示/非表示・アニメーション） =====
+  const secStyle = document.createElement('style');
+  secStyle.id = 'rin-editor-style2';
+  secStyle.textContent = `
+    .rin-sec-active{position:relative;outline:1px dashed rgba(155,34,55,.5)}
+    .rin-sec-tools{position:absolute;top:10px;right:10px;z-index:9999;display:flex;gap:6px;
+      background:#1c1416;border:1px solid #d4af6a;border-radius:999px;padding:6px 10px;
+      font-family:'Noto Sans JP',sans-serif;align-items:center}
+    .rin-sec-tools button,.rin-sec-tools select{background:#2a1d20;color:#efe6dc;border:1px solid rgba(212,175,106,.4);
+      border-radius:6px;font-size:12px;padding:5px 9px;cursor:pointer;font-family:inherit}
+    .rin-sec-tools button:hover{background:#6e1423}
+    .rin-sec-tools .name{font-size:11px;color:#d4af6a;letter-spacing:.1em;margin-right:4px}
+    .rin-hidden-sec{opacity:.25;filter:grayscale(1)}
+  `;
+  document.head.appendChild(secStyle);
+
+  const AOS_FX = [['fade-up','下から'],['fade-down','上から'],['fade-right','左から'],['fade-left','右から'],['zoom-in','ズーム'],['flip-up','フリップ'],['','なし']];
+  const secName = s => (s.querySelector('h1,h2,.sec-title')?.textContent || s.className || 'セクション').trim().slice(0,12);
+  const sections = () => [...document.querySelectorAll('body > section, body > div.marquee')];
+
+  let secMode = false;
+  const secBtn = document.createElement('button');
+  secBtn.id = 'rin-secmode';
+  secBtn.textContent = '🧱 セクション編集';
+  secBtn.style.cssText = 'background:#2a1d20;color:#efe6dc;border:1px solid rgba(212,175,106,.5)';
+  bar.insertBefore(secBtn, bar.querySelector('#rin-save'));
+
+  function buildTools(){
+    sections().forEach(sec => {
+      if (sec.querySelector(':scope > .rin-sec-tools')) return;
+      sec.classList.add('rin-sec-active');
+      const t = document.createElement('div');
+      t.className = 'rin-sec-tools';
+      t.contentEditable = 'false';
+      // アニメーション選択（セクション内の data-aos を一括変更）
+      const hasAos = sec.querySelector('[data-aos]');
+      let fxSel = '';
+      if (hasAos){
+        const cur = hasAos.getAttribute('data-aos') || '';
+        fxSel = '<select class="fx" title="アニメーション">' +
+          AOS_FX.map(([v,l])=>`<option value="${v}" ${v===cur?'selected':''}>🎬 ${l}</option>`).join('') + '</select>';
+      }
+      const hidden = sec.style.display === 'none' || sec.classList.contains('rin-hidden-sec');
+      t.innerHTML = `<span class="name">${secName(sec)}</span>
+        <button class="up" title="上へ">↑</button>
+        <button class="down" title="下へ">↓</button>
+        ${fxSel}
+        <button class="vis" title="表示/非表示">${hidden?'🙈':'👁'}</button>`;
+      sec.prepend(t);
+
+      t.querySelector('.up').onclick = () => {
+        const prev = sec.previousElementSibling;
+        if (prev && (prev.matches('section') || prev.matches('div.marquee'))) sec.parentNode.insertBefore(sec, prev);
+        sec.scrollIntoView({behavior:'smooth',block:'center'});
+      };
+      t.querySelector('.down').onclick = () => {
+        const next = sec.nextElementSibling;
+        if (next && (next.matches('section') || next.matches('div.marquee'))) sec.parentNode.insertBefore(next, sec);
+        sec.scrollIntoView({behavior:'smooth',block:'center'});
+      };
+      t.querySelector('.vis').onclick = e => {
+        const nowHidden = sec.classList.toggle('rin-hidden-sec');
+        // 保存用: 実際の非表示は style で永続化（編集中は薄く見せる）
+        if (nowHidden){ sec.setAttribute('data-rin-hide','1'); e.target.textContent='🙈'; }
+        else { sec.removeAttribute('data-rin-hide'); e.target.textContent='👁'; }
+        status.textContent = nowHidden ? 'このセクションは公開時に非表示になります' : '表示に戻しました';
+      };
+      const fx = t.querySelector('.fx');
+      if (fx) fx.onchange = () => {
+        sec.querySelectorAll('[data-aos]').forEach(el => {
+          if (fx.value) el.setAttribute('data-aos', fx.value);
+          else el.removeAttribute('data-aos');
+          el.classList.remove('aos-init','aos-animate');
+        });
+        if (window.AOS) AOS.refreshHard();
+        status.textContent = '✅ アニメーションを変更しました';
+      };
+    });
+  }
+  function removeTools(){
+    document.querySelectorAll('.rin-sec-tools').forEach(n=>n.remove());
+    document.querySelectorAll('.rin-sec-active').forEach(n=>n.classList.remove('rin-sec-active'));
+  }
+  secBtn.onclick = () => {
+    secMode = !secMode;
+    secBtn.style.background = secMode ? '#6e1423' : '#2a1d20';
+    secMode ? buildTools() : removeTools();
+    status.textContent = secMode ? '各セクション右上のボタンで操作' : '文字をクリックして編集';
+  };
+
+  // 非表示指定を保存HTMLに反映するため cleanHTML をラップ
+  const _origClean = cleanHTML;
+  window.__rinClean = function(){
+    let html = _origClean();
+    const tmp = document.createElement('html');
+    tmp.innerHTML = html;
+    tmp.querySelectorAll('[data-rin-hide]').forEach(n=>{
+      n.removeAttribute('data-rin-hide');
+      n.classList.remove('rin-hidden-sec');
+      if(!n.classList.length) n.removeAttribute('class');
+      n.style.display = 'none';
+    });
+    tmp.querySelectorAll('.rin-hidden-sec').forEach(n=>n.classList.remove('rin-hidden-sec'));
+    return '<!DOCTYPE html>\n' + tmp.outerHTML;
   };
 })();
 """
