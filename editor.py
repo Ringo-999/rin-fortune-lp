@@ -73,6 +73,41 @@ EDITOR_JS = r"""
   }
   bar.querySelector('#rin-save').onclick = ()=>post('/save');
   bar.querySelector('#rin-deploy').onclick = ()=>post('/deploy');
+
+  // ===== 画像の差し替え =====
+  const picker = document.createElement('input');
+  picker.type = 'file'; picker.accept = 'image/jpeg,image/png,image/webp';
+  picker.style.display = 'none';
+  document.body.appendChild(picker);
+  let targetImg = null;
+
+  document.querySelectorAll('img').forEach(img => {
+    img.style.cursor = 'pointer';
+    img.title = 'クリックで画像を差し替え';
+    img.addEventListener('click', e => {
+      e.preventDefault(); e.stopPropagation();
+      targetImg = img; picker.value = ''; picker.click();
+    });
+    img.addEventListener('mouseenter', ()=> img.style.outline = '2px solid #d4af6a');
+    img.addEventListener('mouseleave', ()=> img.style.outline = 'none');
+  });
+
+  picker.onchange = async () => {
+    const file = picker.files[0];
+    if (!file || !targetImg) return;
+    if (file.size > 8*1024*1024){ status.textContent = '❌ 8MB以下にしてください'; return; }
+    // 既存のファイル名を維持して参照を壊さない
+    const name = (targetImg.getAttribute('src')||'').split('?')[0].split('/').pop() || ('img-'+Date.now()+'.jpg');
+    status.textContent = '画像をアップロード中…';
+    try{
+      const r = await fetch('/upload?name='+encodeURIComponent(name), {method:'POST', body:file});
+      const j = await r.json();
+      if (j.ok){
+        targetImg.src = j.name + '?v=' + Date.now();
+        status.textContent = '✅ 画像を差し替えました（保存も完了）';
+      } else status.textContent = '❌ ' + j.error;
+    }catch(e){ status.textContent = '❌ アップロード失敗'; }
+  };
 })();
 """
 
@@ -98,9 +133,10 @@ class Handler(http.server.BaseHTTPRequestHandler):
             inject = f'<script data-rin-editor>{EDITOR_JS}</script></body>'
             html = html.replace("</body>", inject)
             self._send(200, html)
-        elif path in ("/rin.jpg", "/hero.jpg"):
+        elif re.fullmatch(r"/[\w-]+\.(jpg|jpeg|png|webp)", path):
+            ctype = {"png": "image/png", "webp": "image/webp"}.get(path.rsplit(".", 1)[1], "image/jpeg")
             try:
-                self._send(200, open(os.path.join(ROOT, path[1:]), "rb").read(), "image/jpeg")
+                self._send(200, open(os.path.join(ROOT, path[1:]), "rb").read(), ctype)
             except FileNotFoundError:
                 self._send(404, "not found")
         else:
@@ -123,7 +159,25 @@ class Handler(http.server.BaseHTTPRequestHandler):
         return True, None
 
     def do_POST(self):
-        if self.path == "/save":
+        if self.path.startswith("/upload"):
+            from urllib.parse import urlparse, parse_qs
+            name = parse_qs(urlparse(self.path).query).get("name", [""])[0]
+            if not re.fullmatch(r"[\w-]+\.(jpg|jpeg|png|webp)", name):
+                self._send(200, json.dumps({"ok": False, "error": "ファイル名が不正です"}), "application/json")
+                return
+            data = self.rfile.read(int(self.headers.get("Content-Length", 0)))
+            if len(data) < 100 or len(data) > 8 * 1024 * 1024:
+                self._send(200, json.dumps({"ok": False, "error": "サイズが不正です"}), "application/json")
+                return
+            dest = os.path.join(ROOT, name)
+            if os.path.exists(dest):  # 旧画像をバックアップ
+                ts = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+                os.makedirs(os.path.join(ROOT, ".backups"), exist_ok=True)
+                shutil.copy(dest, os.path.join(ROOT, ".backups", f"{ts}-{name}"))
+            with open(dest, "wb") as f:
+                f.write(data)
+            self._send(200, json.dumps({"ok": True, "name": name}), "application/json")
+        elif self.path == "/save":
             ok, err = self._save()
             self._send(200, json.dumps({"ok": ok, "error": err}), "application/json")
         elif self.path == "/deploy":
