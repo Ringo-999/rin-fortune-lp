@@ -234,10 +234,10 @@ EDITOR_JS = r"""
 
     // font
     live('ri-ff','change',e=>{pushUndo();el.style.fontFamily=e.target.value;});
-    // bg
-    live('ri-bg','input',e=>{el.style.backgroundColor=e.target.value;});
+    // bg （グラデ等のbackground-imageを解除して色を確実に見せる）
+    live('ri-bg','input',e=>{el.style.backgroundImage='none';el.style.backgroundColor=e.target.value;});
     live('ri-bg','change',pushUndo);
-    live('ri-bgclear','click',()=>{pushUndo();el.style.backgroundColor='transparent';});
+    live('ri-bgclear','click',()=>{pushUndo();el.style.backgroundImage='none';el.style.backgroundColor='transparent';});
     live('ri-grad','change',e=>{pushUndo();el.style.backgroundImage=e.target.value;if(e.target.value){el.style.backgroundSize='cover';}});
     live('ri-bgimg','click',()=>{imgTarget=el;imgMode='bg';picker.value='';picker.click();});
     live('ri-bgimgclr','click',()=>{pushUndo();el.style.backgroundImage='none';});
