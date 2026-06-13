@@ -106,6 +106,16 @@ nav .cta:hover{background:var(--bordeaux);border-color:var(--bordeaux-2);color:#
 @media(max-width:760px){.hero .bg-en{font-size:clamp(2.4rem,12vw,4rem);bottom:1.5vh}}
 .hero > *{position:relative;z-index:1}
 
+/* ===== 背景動画 ===== */
+.hero .hero-video{
+  position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
+  z-index:0;pointer-events:none;
+}
+.hero .hero-video-overlay{
+  position:absolute;inset:0;z-index:0;pointer-events:none;
+  background:linear-gradient(180deg,rgba(14,10,11,.55),rgba(14,10,11,.4) 42%,rgba(14,10,11,.88));
+}
+
 /* ===== 妖艶アニメーション装飾 ===== */
 /* 背景で回る妖しいオーラ */
 .hero-aura{
@@ -415,6 +425,10 @@ footer .logo{justify-self:center;margin-bottom:14px;font-size:1rem}
 </header>
 
 <section class="hero">
+  <video class="hero-video" autoplay loop muted playsinline poster="hero-poster.jpg">
+    <source src="hero.mp4" type="video/mp4">
+  </video>
+  <div class="hero-video-overlay" aria-hidden="true"></div>
   <div class="hero-aura" aria-hidden="true"></div>
   <div class="hero-smoke" aria-hidden="true"></div>
   <div class="zodiac-ring" aria-hidden="true">

@@ -383,8 +383,8 @@ class Handler(http.server.BaseHTTPRequestHandler):
             inject = f'<script data-rin-editor>{EDITOR_JS}</script></body>'
             html = html.replace("</body>", inject)
             self._send(200, html)
-        elif re.fullmatch(r"/[\w-]+\.(jpg|jpeg|png|webp)", path):
-            ctype = {"png": "image/png", "webp": "image/webp"}.get(path.rsplit(".", 1)[1], "image/jpeg")
+        elif re.fullmatch(r"/[\w-]+\.(jpg|jpeg|png|webp|mp4|webm)", path):
+            ctype = {"png": "image/png", "webp": "image/webp", "mp4": "video/mp4", "webm": "video/webm"}.get(path.rsplit(".", 1)[1], "image/jpeg")
             try:
                 self._send(200, open(os.path.join(ROOT, path[1:]), "rb").read(), ctype)
             except FileNotFoundError:
