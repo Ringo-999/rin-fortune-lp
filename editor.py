@@ -79,7 +79,7 @@ EDITOR_JS = r"""
 
   /* ---------- file picker (画像) ---------- */
   const picker = document.createElement('input');
-  picker.type='file'; picker.accept='image/jpeg,image/png,image/webp'; picker.style.display='none';
+  picker.id='rin-picker'; picker.type='file'; picker.accept='image/jpeg,image/png,image/webp'; picker.style.display='none';
   document.documentElement.appendChild(picker);
   let imgTarget=null, imgMode='img';
   function safeName(f){
@@ -368,10 +368,13 @@ EDITOR_JS = r"""
   /* ---------- save / deploy ---------- */
   function cleanHTML(){
     const doc=document.documentElement.cloneNode(true);
-    doc.querySelectorAll('#rin-bar,#rin-panel,#rin-style,script[data-rin-editor]').forEach(n=>n.remove());
+    doc.querySelectorAll('#rin-bar,#rin-panel,#rin-style,#rin-picker,script[data-rin-editor]').forEach(n=>n.remove());
     doc.querySelectorAll('.rin-sel-outline,.rin-hover-outline').forEach(n=>n.classList.remove('rin-sel-outline','rin-hover-outline'));
     doc.querySelectorAll('.aos-init,.aos-animate').forEach(n=>n.classList.remove('aos-init','aos-animate'));
-    doc.querySelectorAll('[data-aos]').forEach(n=>n.removeAttribute('style')); // aos由来のinline opacityを除去 ※後で本来styleは無いので安全
+    // ブラウザ拡張が注入したノードを除去（MaxAI / Jarvis 等）
+    doc.querySelectorAll('script[src*="chrome-extension"],link[href*="chrome-extension"],style#_goober,meta[name^="maxai"],[id^="USE_CHAT_GPT"],#MAXAI_SNACKBAR_CONTAINER,input[type="file"]').forEach(n=>n.remove());
+    doc.querySelectorAll('*').forEach(n=>{const t=n.tagName.toLowerCase();if(/^(jarvis-|use-chat-gpt-ai|max-ai-|maxai-)/.test(t))n.remove();});
+    doc.querySelectorAll('body').forEach(b=>{['data-aos-easing','data-aos-duration','data-aos-delay'].forEach(a=>b.removeAttribute(a));});
     doc.querySelectorAll('img').forEach(n=>{n.removeAttribute('title');const s=n.getAttribute('src');if(s)n.setAttribute('src',s.split('?')[0]);});
     // 非表示指定 → display:none で永続化
     doc.querySelectorAll('[data-rin-hide]').forEach(n=>{n.removeAttribute('data-rin-hide');n.classList.remove('rin-hide-mark');n.style.display='none';});
