@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""りんLP テキスト編集ツール (Wix風)
+"""りんLP スタジオエディター
 使い方: python3 editor.py → http://localhost:7777 を開く
-クリックで文字を編集 → 「保存」でindex.htmlに書き込み → 「公開」でVercelへデプロイ
+任意の要素をクリックで選択 → 右パネルで文字/色/サイズ/余白などを編集 →「保存」→「公開する🚀」
 """
 import http.server, json, re, subprocess, os, shutil, datetime
 
@@ -11,213 +11,314 @@ PORT = 7777
 
 EDITOR_JS = r"""
 (function(){
-  // 編集対象: テキストを持つ要素
-  const SEL = 'h1,h2,h3,p,span,a,li,td,small,div.num,div.label,div.no,div.fee,div.p-name';
-  document.querySelectorAll(SEL).forEach(el => {
-    if (el.closest('#rin-editor-bar')) return;
-    if (el.children.length > 0 && [...el.childNodes].every(n => n.nodeType !== 3 || !n.textContent.trim())) return;
-    el.setAttribute('contenteditable','true');
-    el.classList.add('rin-editable');
-  });
-  // リンクのクリック遷移を無効化(編集優先)
-  document.addEventListener('click', e => {
-    const a = e.target.closest('a');
-    if (a && !a.closest('#rin-editor-bar')) e.preventDefault();
-  }, true);
+  'use strict';
+  const FX = [['','なし'],['fade-up','下から'],['fade-down','上から'],['fade-right','左から'],['fade-left','右から'],['zoom-in','ズーム'],['flip-up','フリップ']];
+  const THEME_VARS = [['--bg','背景'],['--bg-2','背景2'],['--bordeaux','メイン'],['--bordeaux-2','メイン明'],['--wine','ワイン'],['--gold','ゴールド'],['--gold-2','ゴールド明'],['--paper','文字(明)'],['--text','本文']];
+  let selected = null;
+  const undoStack = [];
 
+  /* ---------- chrome (html直下に置く=body復元で消えない) ---------- */
   const style = document.createElement('style');
-  style.id = 'rin-editor-style';
+  style.id = 'rin-style';
   style.textContent = `
-    .rin-editable{outline:1px dashed rgba(212,175,106,.0);transition:outline-color .2s;cursor:text}
-    .rin-editable:hover{outline-color:rgba(212,175,106,.6)}
-    .rin-editable:focus{outline:2px solid #d4af6a;outline-offset:2px;background:rgba(212,175,106,.08)}
-    #rin-editor-bar{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:99999;
-      display:flex;gap:12px;align-items:center;background:#1c1416;border:1px solid #d4af6a;
-      border-radius:999px;padding:12px 22px;box-shadow:0 16px 50px rgba(0,0,0,.6);
-      font-family:'Noto Sans JP',sans-serif;font-size:13px;color:#efe6dc}
-    #rin-editor-bar button{border:none;border-radius:999px;padding:10px 26px;font-size:13px;
-      letter-spacing:.1em;cursor:pointer;font-family:inherit;transition:.25s}
-    #rin-save{background:#d4af6a;color:#1c1416;font-weight:700}
-    #rin-save:hover{background:#f0d9a8}
-    #rin-deploy{background:#6e1423;color:#fff;font-weight:700}
-    #rin-deploy:hover{background:#9b2237}
-    #rin-status{min-width:130px;opacity:.85}
+    #rin-bar{position:fixed;bottom:22px;left:22px;z-index:99999;display:flex;gap:10px;align-items:center;
+      background:#160f11;border:1px solid #d4af6a;border-radius:14px;padding:12px 16px;
+      font-family:'Noto Sans JP',sans-serif;font-size:13px;color:#efe6dc;box-shadow:0 18px 50px rgba(0,0,0,.6)}
+    #rin-bar button{border:none;border-radius:9px;padding:9px 16px;font-size:13px;cursor:pointer;font-family:inherit;transition:.2s}
+    #rin-bar .ghost{background:#2a1d20;color:#efe6dc;border:1px solid rgba(212,175,106,.4)}
+    #rin-bar .ghost:hover{background:#3a282c}
+    #rin-bar #rin-save{background:#d4af6a;color:#160f11;font-weight:700}
+    #rin-bar #rin-save:hover{background:#f0d9a8}
+    #rin-bar #rin-deploy{background:#6e1423;color:#fff;font-weight:700}
+    #rin-bar #rin-deploy:hover{background:#9b2237}
+    #rin-status{min-width:120px;opacity:.85;font-size:12px}
+    #rin-panel{position:fixed;top:0;right:0;width:300px;height:100vh;z-index:99998;overflow-y:auto;
+      background:#160f11;border-left:1px solid #d4af6a;color:#efe6dc;font-family:'Noto Sans JP',sans-serif;
+      transform:translateX(310px);transition:transform .25s;padding:18px 18px 120px}
+    #rin-panel.open{transform:none}
+    #rin-panel h4{font-size:12px;letter-spacing:.15em;color:#d4af6a;margin:18px 0 8px;border-bottom:1px solid rgba(212,175,106,.25);padding-bottom:5px}
+    #rin-panel h4:first-child{margin-top:0}
+    #rin-panel .tag{font-size:11px;color:#9b8;opacity:.8;margin-bottom:6px;word-break:break-all}
+    .rin-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:7px 0;font-size:12px}
+    .rin-row label{opacity:.85;white-space:nowrap}
+    .rin-row input[type=range]{flex:1;accent-color:#d4af6a}
+    .rin-row input[type=color]{width:34px;height:26px;border:1px solid rgba(212,175,106,.4);border-radius:6px;background:none;padding:0;cursor:pointer}
+    .rin-row input[type=number],.rin-row select{background:#2a1d20;color:#efe6dc;border:1px solid rgba(212,175,106,.4);border-radius:6px;padding:5px 7px;font-size:12px;width:80px;font-family:inherit}
+    .rin-num{width:46px!important;text-align:right}
+    .rin-btns{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+    .rin-btns button{flex:1;min-width:62px;background:#2a1d20;color:#efe6dc;border:1px solid rgba(212,175,106,.4);
+      border-radius:8px;padding:8px 4px;font-size:12px;cursor:pointer;font-family:inherit;transition:.2s}
+    .rin-btns button:hover{background:#6e1423}
+    .rin-align button{flex:1}
+    .rin-hint{font-size:11px;opacity:.55;line-height:1.7;margin-top:4px}
+    .rin-sel-outline{outline:2px solid #d4af6a!important;outline-offset:2px}
+    .rin-hover-outline{outline:1px dashed rgba(212,175,106,.55)!important}
+    .rin-hide-mark{opacity:.3;filter:grayscale(1)}
+    [data-rin-edit]:hover{cursor:text}
   `;
-  document.head.appendChild(style);
+  document.documentElement.appendChild(style);
 
+  /* ---------- toolbar ---------- */
   const bar = document.createElement('div');
-  bar.id = 'rin-editor-bar';
-  bar.innerHTML = `<span>✏️ 編集モード</span>
+  bar.id = 'rin-bar';
+  bar.innerHTML = `
+    <strong style="color:#d4af6a">りん Studio</strong>
+    <button class="ghost" id="rin-undo">↩ 戻す</button>
+    <button class="ghost" id="rin-theme">🎨 テーマ</button>
     <button id="rin-save">保存</button>
     <button id="rin-deploy">公開する 🚀</button>
-    <span id="rin-status">文字をクリックして編集</span>`;
-  document.body.appendChild(bar);
+    <span id="rin-status">要素をクリックで選択</span>`;
+  document.documentElement.appendChild(bar);
   const status = bar.querySelector('#rin-status');
+  const setStatus = t => status.textContent = t;
 
+  /* ---------- inspector panel ---------- */
+  const panel = document.createElement('div');
+  panel.id = 'rin-panel';
+  document.documentElement.appendChild(panel);
+
+  /* ---------- file picker (画像) ---------- */
+  const picker = document.createElement('input');
+  picker.type='file'; picker.accept='image/jpeg,image/png,image/webp'; picker.style.display='none';
+  document.documentElement.appendChild(picker);
+  let imgTarget=null;
+  picker.onchange = async () => {
+    const f=picker.files[0]; if(!f||!imgTarget) return;
+    if(f.size>8*1024*1024){setStatus('❌ 8MB以下に');return;}
+    const name=(imgTarget.getAttribute('src')||'').split('?')[0].split('/').pop()||('img-'+Date.now()+'.jpg');
+    setStatus('画像アップ中…');
+    try{
+      const r=await fetch('/upload?name='+encodeURIComponent(name),{method:'POST',body:f});
+      const j=await r.json();
+      if(j.ok){imgTarget.src=j.name+'?v='+Date.now();setStatus('✅ 画像差替＆保存');}
+      else setStatus('❌ '+j.error);
+    }catch(e){setStatus('❌ アップ失敗');}
+  };
+
+  /* ---------- helpers ---------- */
+  const isChrome = el => el.closest('#rin-bar,#rin-panel,#rin-style');
+  const px = v => Math.round(parseFloat(v)||0);
+  const cs = el => getComputedStyle(el);
+  const rgb2hex = c => {
+    const m=c.match(/\d+/g); if(!m) return '#000000';
+    return '#'+m.slice(0,3).map(x=>(+x).toString(16).padStart(2,'0')).join('');
+  };
+
+  function getCleanBody(){
+    const b=document.body.cloneNode(true);
+    b.querySelectorAll('.rin-sel-outline,.rin-hover-outline').forEach(n=>n.classList.remove('rin-sel-outline','rin-hover-outline'));
+    return b.innerHTML;
+  }
+  function pushUndo(){
+    undoStack.push({body:getCleanBody(), html:document.documentElement.getAttribute('style')||''});
+    if(undoStack.length>40) undoStack.shift();
+  }
+
+  /* ---------- selection ---------- */
+  let hoverEl=null;
+  document.addEventListener('mouseover', e=>{
+    if(isChrome(e.target)) return;
+    if(hoverEl) hoverEl.classList.remove('rin-hover-outline');
+    hoverEl=e.target; if(hoverEl!==selected) hoverEl.classList.add('rin-hover-outline');
+  });
+  document.addEventListener('mouseout', e=>{ if(hoverEl){hoverEl.classList.remove('rin-hover-outline');hoverEl=null;} });
+
+  document.addEventListener('click', e=>{
+    if(isChrome(e.target)) return;
+    const a=e.target.closest('a'); if(a) e.preventDefault();
+    if(e.target===document.body||e.target===document.documentElement) return;
+    select(e.target);
+  }, true);
+
+  function select(el){
+    if(selected) selected.classList.remove('rin-sel-outline');
+    selected=el; el.classList.remove('rin-hover-outline'); el.classList.add('rin-sel-outline');
+    renderInspector(el);
+    panel.classList.add('open');
+  }
+
+  /* ---------- inspector UI ---------- */
+  function row(label, control){ return `<div class="rin-row"><label>${label}</label>${control}</div>`; }
+
+  function renderInspector(el){
+    const c=cs(el);
+    const hasText = [...el.childNodes].some(n=>n.nodeType===3 && n.textContent.trim());
+    const isImg = el.tagName==='IMG';
+    const isSection = el.matches('section,div.marquee');
+    const aosEl = el.hasAttribute('data-aos') ? el : (isSection ? el.querySelector('[data-aos]') : null);
+    const tagName = el.tagName.toLowerCase()+(el.className?('.'+[...el.classList].filter(x=>!x.startsWith('rin-')).join('.')):'');
+
+    let html = `<div class="tag">▣ ${tagName}</div>`;
+
+    if(hasText){
+      html += `<h4>テキスト</h4>`;
+      html += row('色', `<input type="color" id="ri-color" value="${rgb2hex(c.color)}">`);
+      html += row('サイズ', `<input type="range" id="ri-fs" min="8" max="120" value="${px(c.fontSize)}"><input type="number" class="rin-num" id="ri-fsn" value="${px(c.fontSize)}">`);
+      html += row('太さ', `<select id="ri-fw">${[300,400,500,600,700,900].map(w=>`<option ${px(c.fontWeight)===w?'selected':''}>${w}</option>`).join('')}</select>`);
+      html += row('行間', `<input type="range" id="ri-lh" min="1" max="3" step="0.05" value="${(parseFloat(c.lineHeight)/px(c.fontSize)||1.5).toFixed(2)}">`);
+      html += row('字間(px)', `<input type="range" id="ri-ls" min="-2" max="20" step="0.5" value="${px(c.letterSpacing)||0}">`);
+      html += `<div class="rin-btns rin-align">
+        <button data-al="left">左</button><button data-al="center">中央</button><button data-al="right">右</button></div>`;
+    }
+
+    html += `<h4>背景・枠</h4>`;
+    html += row('背景色', `<input type="color" id="ri-bg" value="${rgb2hex(c.backgroundColor)}"><button class="ghost" id="ri-bgclear" style="padding:4px 8px;font-size:11px;border-radius:6px">透明</button>`);
+    html += row('角丸(px)', `<input type="range" id="ri-br" min="0" max="80" value="${px(c.borderRadius)}">`);
+    html += row('透明度', `<input type="range" id="ri-op" min="0" max="1" step="0.05" value="${c.opacity}">`);
+
+    html += `<h4>余白</h4>`;
+    html += row('内側(px)', `<input type="range" id="ri-pad" min="0" max="160" value="${px(c.paddingTop)}">`);
+    html += row('外側(px)', `<input type="range" id="ri-mar" min="0" max="160" value="${px(c.marginTop)}">`);
+
+    if(aosEl){
+      html += `<h4>アニメーション</h4>`;
+      html += row('効果', `<select id="ri-fx">${FX.map(([v,l])=>`<option value="${v}" ${aosEl.getAttribute('data-aos')===v?'selected':''}>🎬 ${l}</option>`).join('')}</select>`);
+    }
+
+    html += `<h4>操作</h4>`;
+    html += `<div class="rin-btns">`;
+    if(isImg) html += `<button id="ri-img">🖼 画像差替</button>`;
+    if(isSection) html += `<button id="ri-up">↑ 上へ</button><button id="ri-down">↓ 下へ</button><button id="ri-hide">👁 表示切替</button>`;
+    html += `<button id="ri-dup">⧉ 複製</button><button id="ri-del">🗑 削除</button></div>`;
+    html += `<p class="rin-hint">文字は要素を直接クリックしても打ち替えられます。Esc で選択解除。</p>`;
+
+    panel.innerHTML = html;
+    bindInspector(el, aosEl, isImg, isSection);
+  }
+
+  function bindInspector(el, aosEl, isImg, isSection){
+    const $=id=>panel.querySelector('#'+id);
+    const live=(id,ev,fn)=>{const e=$(id); if(e) e.addEventListener(ev,fn);};
+    const commitOnce=(id)=>{const e=$(id); if(e) e.addEventListener('change',()=>{},{once:true});};
+
+    // typography
+    live('ri-color','input',e=>{el.style.color=e.target.value;});
+    live('ri-color','change',pushUndo);
+    const fs=$('ri-fs'),fsn=$('ri-fsn');
+    if(fs){fs.addEventListener('input',e=>{el.style.fontSize=e.target.value+'px';if(fsn)fsn.value=e.target.value;});fs.addEventListener('change',pushUndo);}
+    if(fsn){fsn.addEventListener('input',e=>{el.style.fontSize=e.target.value+'px';if(fs)fs.value=e.target.value;});}
+    live('ri-fw','change',e=>{pushUndo();el.style.fontWeight=e.target.value;});
+    live('ri-lh','input',e=>{el.style.lineHeight=e.target.value;});
+    live('ri-lh','change',pushUndo);
+    live('ri-ls','input',e=>{el.style.letterSpacing=e.target.value+'px';});
+    live('ri-ls','change',pushUndo);
+    panel.querySelectorAll('.rin-align button').forEach(b=>b.onclick=()=>{pushUndo();el.style.textAlign=b.dataset.al;});
+
+    // bg / border
+    live('ri-bg','input',e=>{el.style.backgroundColor=e.target.value;});
+    live('ri-bg','change',pushUndo);
+    live('ri-bgclear','click',()=>{pushUndo();el.style.backgroundColor='transparent';});
+    live('ri-br','input',e=>{el.style.borderRadius=e.target.value+'px';});
+    live('ri-br','change',pushUndo);
+    live('ri-op','input',e=>{el.style.opacity=e.target.value;});
+    live('ri-op','change',pushUndo);
+
+    // spacing
+    live('ri-pad','input',e=>{el.style.padding=e.target.value+'px';});
+    live('ri-pad','change',pushUndo);
+    live('ri-mar','input',e=>{el.style.margin=e.target.value+'px';});
+    live('ri-mar','change',pushUndo);
+
+    // animation
+    live('ri-fx','change',e=>{
+      pushUndo();
+      const targets = isSection ? el.querySelectorAll('[data-aos]') : [aosEl];
+      targets.forEach(t=>{ if(!t)return; if(e.target.value){t.setAttribute('data-aos',e.target.value);}else{t.removeAttribute('data-aos');} t.classList.remove('aos-init','aos-animate'); });
+      if(window.AOS) AOS.refreshHard();
+      setStatus('✅ アニメ変更');
+    });
+
+    // actions
+    live('ri-img','click',()=>{imgTarget=el;picker.value='';picker.click();});
+    live('ri-up','click',()=>{pushUndo();const p=el.previousElementSibling;if(p&&p.matches('section,div.marquee'))el.parentNode.insertBefore(el,p);el.scrollIntoView({behavior:'smooth',block:'center'});});
+    live('ri-down','click',()=>{pushUndo();const n=el.nextElementSibling;if(n&&n.matches('section,div.marquee'))el.parentNode.insertBefore(n,el);el.scrollIntoView({behavior:'smooth',block:'center'});});
+    live('ri-hide','click',()=>{pushUndo();const h=el.classList.toggle('rin-hide-mark');if(h)el.setAttribute('data-rin-hide','1');else el.removeAttribute('data-rin-hide');setStatus(h?'公開時に非表示':'表示に戻す');});
+    live('ri-dup','click',()=>{pushUndo();const cl=el.cloneNode(true);cl.classList.remove('rin-sel-outline');el.after(cl);setStatus('⧉ 複製しました');});
+    live('ri-del','click',()=>{pushUndo();el.remove();selected=null;panel.classList.remove('open');setStatus('🗑 削除しました');});
+  }
+
+  /* ---------- theme panel ---------- */
+  let themeOpen=false;
+  bar.querySelector('#rin-theme').onclick=()=>{
+    themeOpen=!themeOpen;
+    if(!themeOpen){panel.classList.remove('open');return;}
+    const rootCS=cs(document.documentElement);
+    let html=`<div class="tag">🎨 テーマカラー（サイト全体）</div>`;
+    THEME_VARS.forEach(([v,l])=>{
+      const cur=(document.documentElement.style.getPropertyValue(v)||rootCS.getPropertyValue(v)).trim();
+      const hex=cur.startsWith('#')?cur:rgb2hex(cur);
+      html+=row(l,`<input type="color" data-var="${v}" value="${hex}">`);
+    });
+    html+=`<p class="rin-hint">色を変えると全ページに即反映されます。</p>`;
+    panel.innerHTML=html; panel.classList.add('open');
+    panel.querySelectorAll('input[data-var]').forEach(inp=>{
+      inp.addEventListener('input',e=>document.documentElement.style.setProperty(e.target.dataset.var,e.target.value));
+      inp.addEventListener('change',pushUndo);
+    });
+  };
+
+  /* ---------- undo ---------- */
+  bar.querySelector('#rin-undo').onclick=doUndo;
+  document.addEventListener('keydown',e=>{
+    if((e.metaKey||e.ctrlKey)&&e.key==='z'){e.preventDefault();doUndo();}
+    if(e.key==='Escape'&&selected){selected.classList.remove('rin-sel-outline');selected=null;panel.classList.remove('open');}
+  });
+  function doUndo(){
+    if(!undoStack.length){setStatus('これ以上戻せません');return;}
+    const s=undoStack.pop();
+    document.body.innerHTML=s.body;
+    if(s.html) document.documentElement.setAttribute('style',s.html); else document.documentElement.removeAttribute('style');
+    selected=null; panel.classList.remove('open');
+    if(window.AOS) AOS.refreshHard();
+    setStatus('↩ 戻しました');
+  }
+
+  /* ---------- save / deploy ---------- */
   function cleanHTML(){
-    const doc = document.documentElement.cloneNode(true);
-    doc.querySelectorAll('#rin-editor-bar,#rin-editor-style,#rin-editor-style2,script[data-rin-editor],.rin-sec-tools').forEach(n=>n.remove());
-    doc.querySelectorAll('.rin-sec-active').forEach(n=>{n.classList.remove('rin-sec-active');if(!n.classList.length)n.removeAttribute('class');});
-    doc.querySelectorAll('[contenteditable]').forEach(n=>{n.removeAttribute('contenteditable');n.classList.remove('rin-editable');if(!n.classList.length)n.removeAttribute('class');});
+    const doc=document.documentElement.cloneNode(true);
+    doc.querySelectorAll('#rin-bar,#rin-panel,#rin-style,script[data-rin-editor]').forEach(n=>n.remove());
+    doc.querySelectorAll('.rin-sel-outline,.rin-hover-outline').forEach(n=>n.classList.remove('rin-sel-outline','rin-hover-outline'));
     doc.querySelectorAll('.aos-init,.aos-animate').forEach(n=>n.classList.remove('aos-init','aos-animate'));
-    doc.querySelectorAll('img').forEach(n=>{n.removeAttribute('title');n.removeAttribute('style');n.src=n.getAttribute('src').split('?')[0];});
-    doc.querySelectorAll('[data-aos]').forEach(n=>{n.removeAttribute('style')});
-    doc.querySelectorAll('body').forEach(b=>b.removeAttribute('style'));
-    return '<!DOCTYPE html>\n' + doc.outerHTML;
+    doc.querySelectorAll('[data-aos]').forEach(n=>n.removeAttribute('style')); // aos由来のinline opacityを除去 ※後で本来styleは無いので安全
+    doc.querySelectorAll('img').forEach(n=>{n.removeAttribute('title');const s=n.getAttribute('src');if(s)n.setAttribute('src',s.split('?')[0]);});
+    // 非表示指定 → display:none で永続化
+    doc.querySelectorAll('[data-rin-hide]').forEach(n=>{n.removeAttribute('data-rin-hide');n.classList.remove('rin-hide-mark');n.style.display='none';});
+    doc.querySelectorAll('.rin-hide-mark').forEach(n=>n.classList.remove('rin-hide-mark'));
+    doc.querySelectorAll('[class=""]').forEach(n=>n.removeAttribute('class'));
+    return '<!DOCTYPE html>\n'+doc.outerHTML;
   }
   async function post(url){
-    status.textContent = url === '/save' ? '保存中…' : '公開中…(1分ほど)';
+    setStatus(url==='/save'?'保存中…':'公開中…(約1分)');
     try{
-      const r = await fetch(url,{method:'POST',headers:{'Content-Type':'text/html'},body:(window.__rinClean||cleanHTML)()});
-      const j = await r.json();
-      status.textContent = j.ok ? (url==='/save' ? '✅ 保存しました' : '✅ 公開しました！') : '❌ ' + j.error;
-    }catch(e){ status.textContent = '❌ 通信エラー'; }
+      const r=await fetch(url,{method:'POST',headers:{'Content-Type':'text/html'},body:cleanHTML()});
+      const j=await r.json();
+      setStatus(j.ok?(url==='/save'?'✅ 保存しました':'✅ 公開しました！'):'❌ '+j.error);
+    }catch(e){setStatus('❌ 通信エラー');}
   }
-  bar.querySelector('#rin-save').onclick = ()=>post('/save');
-  bar.querySelector('#rin-deploy').onclick = ()=>post('/deploy');
+  bar.querySelector('#rin-save').onclick=()=>post('/save');
+  bar.querySelector('#rin-deploy').onclick=()=>post('/deploy');
 
-  // ===== 画像の差し替え =====
-  const picker = document.createElement('input');
-  picker.type = 'file'; picker.accept = 'image/jpeg,image/png,image/webp';
-  picker.style.display = 'none';
-  document.body.appendChild(picker);
-  let targetImg = null;
-
-  document.querySelectorAll('img').forEach(img => {
-    img.style.cursor = 'pointer';
-    img.title = 'クリックで画像を差し替え';
-    img.addEventListener('click', e => {
-      e.preventDefault(); e.stopPropagation();
-      targetImg = img; picker.value = ''; picker.click();
-    });
-    img.addEventListener('mouseenter', ()=> img.style.outline = '2px solid #d4af6a');
-    img.addEventListener('mouseleave', ()=> img.style.outline = 'none');
-  });
-
-  picker.onchange = async () => {
-    const file = picker.files[0];
-    if (!file || !targetImg) return;
-    if (file.size > 8*1024*1024){ status.textContent = '❌ 8MB以下にしてください'; return; }
-    // 既存のファイル名を維持して参照を壊さない
-    const name = (targetImg.getAttribute('src')||'').split('?')[0].split('/').pop() || ('img-'+Date.now()+'.jpg');
-    status.textContent = '画像をアップロード中…';
-    try{
-      const r = await fetch('/upload?name='+encodeURIComponent(name), {method:'POST', body:file});
-      const j = await r.json();
-      if (j.ok){
-        targetImg.src = j.name + '?v=' + Date.now();
-        status.textContent = '✅ 画像を差し替えました（保存も完了）';
-      } else status.textContent = '❌ ' + j.error;
-    }catch(e){ status.textContent = '❌ アップロード失敗'; }
-  };
-
-  // ===== セクション編集（並べ替え・表示/非表示・アニメーション） =====
-  const secStyle = document.createElement('style');
-  secStyle.id = 'rin-editor-style2';
-  secStyle.textContent = `
-    .rin-sec-active{position:relative;outline:1px dashed rgba(155,34,55,.5)}
-    .rin-sec-tools{position:absolute;top:10px;right:10px;z-index:9999;display:flex;gap:6px;
-      background:#1c1416;border:1px solid #d4af6a;border-radius:999px;padding:6px 10px;
-      font-family:'Noto Sans JP',sans-serif;align-items:center}
-    .rin-sec-tools button,.rin-sec-tools select{background:#2a1d20;color:#efe6dc;border:1px solid rgba(212,175,106,.4);
-      border-radius:6px;font-size:12px;padding:5px 9px;cursor:pointer;font-family:inherit}
-    .rin-sec-tools button:hover{background:#6e1423}
-    .rin-sec-tools .name{font-size:11px;color:#d4af6a;letter-spacing:.1em;margin-right:4px}
-    .rin-hidden-sec{opacity:.25;filter:grayscale(1)}
-  `;
-  document.head.appendChild(secStyle);
-
-  const AOS_FX = [['fade-up','下から'],['fade-down','上から'],['fade-right','左から'],['fade-left','右から'],['zoom-in','ズーム'],['flip-up','フリップ'],['','なし']];
-  const secName = s => (s.querySelector('h1,h2,.sec-title')?.textContent || s.className || 'セクション').trim().slice(0,12);
-  const sections = () => [...document.querySelectorAll('body > section, body > div.marquee')];
-
-  let secMode = false;
-  const secBtn = document.createElement('button');
-  secBtn.id = 'rin-secmode';
-  secBtn.textContent = '🧱 セクション編集';
-  secBtn.style.cssText = 'background:#2a1d20;color:#efe6dc;border:1px solid rgba(212,175,106,.5)';
-  bar.insertBefore(secBtn, bar.querySelector('#rin-save'));
-
-  function buildTools(){
-    sections().forEach(sec => {
-      if (sec.querySelector(':scope > .rin-sec-tools')) return;
-      sec.classList.add('rin-sec-active');
-      const t = document.createElement('div');
-      t.className = 'rin-sec-tools';
-      t.contentEditable = 'false';
-      // アニメーション選択（セクション内の data-aos を一括変更）
-      const hasAos = sec.querySelector('[data-aos]');
-      let fxSel = '';
-      if (hasAos){
-        const cur = hasAos.getAttribute('data-aos') || '';
-        fxSel = '<select class="fx" title="アニメーション">' +
-          AOS_FX.map(([v,l])=>`<option value="${v}" ${v===cur?'selected':''}>🎬 ${l}</option>`).join('') + '</select>';
-      }
-      const hidden = sec.style.display === 'none' || sec.classList.contains('rin-hidden-sec');
-      t.innerHTML = `<span class="name">${secName(sec)}</span>
-        <button class="up" title="上へ">↑</button>
-        <button class="down" title="下へ">↓</button>
-        ${fxSel}
-        <button class="vis" title="表示/非表示">${hidden?'🙈':'👁'}</button>`;
-      sec.prepend(t);
-
-      t.querySelector('.up').onclick = () => {
-        const prev = sec.previousElementSibling;
-        if (prev && (prev.matches('section') || prev.matches('div.marquee'))) sec.parentNode.insertBefore(sec, prev);
-        sec.scrollIntoView({behavior:'smooth',block:'center'});
-      };
-      t.querySelector('.down').onclick = () => {
-        const next = sec.nextElementSibling;
-        if (next && (next.matches('section') || next.matches('div.marquee'))) sec.parentNode.insertBefore(next, sec);
-        sec.scrollIntoView({behavior:'smooth',block:'center'});
-      };
-      t.querySelector('.vis').onclick = e => {
-        const nowHidden = sec.classList.toggle('rin-hidden-sec');
-        // 保存用: 実際の非表示は style で永続化（編集中は薄く見せる）
-        if (nowHidden){ sec.setAttribute('data-rin-hide','1'); e.target.textContent='🙈'; }
-        else { sec.removeAttribute('data-rin-hide'); e.target.textContent='👁'; }
-        status.textContent = nowHidden ? 'このセクションは公開時に非表示になります' : '表示に戻しました';
-      };
-      const fx = t.querySelector('.fx');
-      if (fx) fx.onchange = () => {
-        sec.querySelectorAll('[data-aos]').forEach(el => {
-          if (fx.value) el.setAttribute('data-aos', fx.value);
-          else el.removeAttribute('data-aos');
-          el.classList.remove('aos-init','aos-animate');
-        });
-        if (window.AOS) AOS.refreshHard();
-        status.textContent = '✅ アニメーションを変更しました';
-      };
+  /* ---------- 直接テキスト編集を有効化 ---------- */
+  function enableText(){
+    document.querySelectorAll('h1,h2,h3,h4,h5,p,span,a,li,td,small,button,div').forEach(el=>{
+      if(isChrome(el)) return;
+      const direct=[...el.childNodes].some(n=>n.nodeType===3&&n.textContent.trim());
+      if(direct&&el.children.length<=2){el.setAttribute('data-rin-edit','1');el.setAttribute('contenteditable','true');}
     });
   }
-  function removeTools(){
-    document.querySelectorAll('.rin-sec-tools').forEach(n=>n.remove());
-    document.querySelectorAll('.rin-sec-active').forEach(n=>n.classList.remove('rin-sec-active'));
-  }
-  secBtn.onclick = () => {
-    secMode = !secMode;
-    secBtn.style.background = secMode ? '#6e1423' : '#2a1d20';
-    secMode ? buildTools() : removeTools();
-    status.textContent = secMode ? '各セクション右上のボタンで操作' : '文字をクリックして編集';
-  };
-
-  // 非表示指定を保存HTMLに反映するため cleanHTML をラップ
-  const _origClean = cleanHTML;
-  window.__rinClean = function(){
-    let html = _origClean();
-    const tmp = document.createElement('html');
-    tmp.innerHTML = html;
-    tmp.querySelectorAll('[data-rin-hide]').forEach(n=>{
-      n.removeAttribute('data-rin-hide');
-      n.classList.remove('rin-hidden-sec');
-      if(!n.classList.length) n.removeAttribute('class');
-      n.style.display = 'none';
-    });
-    tmp.querySelectorAll('.rin-hidden-sec').forEach(n=>n.classList.remove('rin-hidden-sec'));
-    return '<!DOCTYPE html>\n' + tmp.outerHTML;
-  };
+  enableText();
+  // contenteditableで打った内容はDOMに反映済み→保存時にcleanHTMLで属性除去される
 })();
 """
+
+# NOTE: contenteditable/data-rin-edit 属性は cleanHTML 内で除去する（下のJS追補で対応）
+EDITOR_JS = EDITOR_JS.replace(
+    "doc.querySelectorAll('[class=\"\"]').forEach(n=>n.removeAttribute('class'));",
+    "doc.querySelectorAll('[contenteditable]').forEach(n=>n.removeAttribute('contenteditable'));\n"
+    "    doc.querySelectorAll('[data-rin-edit]').forEach(n=>n.removeAttribute('data-rin-edit'));\n"
+    "    doc.querySelectorAll('[class=\"\"]').forEach(n=>n.removeAttribute('class'));"
+)
+
 
 def vercel_path():
     for p in ("/opt/homebrew/bin/vercel", shutil.which("vercel")):
@@ -258,7 +359,6 @@ class Handler(http.server.BaseHTTPRequestHandler):
         html = self._read_body()
         if "</html>" not in html or len(html) < 1000:
             return False, "内容が不正です"
-        # バックアップしてから書き込み
         ts = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
         os.makedirs(os.path.join(ROOT, ".backups"), exist_ok=True)
         shutil.copy(INDEX, os.path.join(ROOT, ".backups", f"index-{ts}.html"))
@@ -278,7 +378,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 self._send(200, json.dumps({"ok": False, "error": "サイズが不正です"}), "application/json")
                 return
             dest = os.path.join(ROOT, name)
-            if os.path.exists(dest):  # 旧画像をバックアップ
+            if os.path.exists(dest):
                 ts = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
                 os.makedirs(os.path.join(ROOT, ".backups"), exist_ok=True)
                 shutil.copy(dest, os.path.join(ROOT, ".backups", f"{ts}-{name}"))
@@ -298,7 +398,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
                     try:
                         subprocess.run(["git", "add", "-A"], cwd=ROOT, check=True, capture_output=True)
                         subprocess.run(["git", "-c", "user.name=rin", "-c", "user.email=yoshikosumosu.y@gmail.com",
-                                        "commit", "-m", "テキスト編集 (editor)", "-q"], cwd=ROOT, capture_output=True)
+                                        "commit", "-m", "スタジオ編集 (editor)", "-q"], cwd=ROOT, capture_output=True)
                         subprocess.run(["git", "push", "-q", "origin", "main"], cwd=ROOT, capture_output=True)
                         r = subprocess.run([vc, "deploy", "--prod", "--yes"], cwd=ROOT,
                                            capture_output=True, text=True, timeout=240)
@@ -311,6 +411,6 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self._send(404, "not found")
 
 if __name__ == "__main__":
-    print(f"✏️  編集モード起動: http://localhost:{PORT}")
-    print("   文字をクリックして編集 →「保存」→「公開する🚀」")
+    print(f"🎨 りん Studio エディター起動: http://localhost:{PORT}")
+    print("   要素をクリックで選択 → 右パネルで編集 →「保存」→「公開する🚀」")
     http.server.ThreadingHTTPServer(("127.0.0.1", PORT), Handler).serve_forever()
