@@ -113,6 +113,8 @@ EDITOR_JS = r"""
     const m=c.match(/\d+/g); if(!m) return '#000000';
     return '#'+m.slice(0,3).map(x=>(+x).toString(16).padStart(2,'0')).join('');
   };
+  const getTr = el => ({x:parseFloat(el.dataset.rinx||0)||0, y:parseFloat(el.dataset.riny||0)||0});
+  const setTr = (el,x,y) => {el.dataset.rinx=x;el.dataset.riny=y;el.style.transform=(x||y)?`translate(${x}px,${y}px)`:'';};
 
   function getCleanBody(){
     const b=document.body.cloneNode(true);
@@ -146,6 +148,43 @@ EDITOR_JS = r"""
     renderInspector(el);
     panel.classList.add('open');
   }
+
+  /* ---------- ドラッグ移動 ---------- */
+  let drag=null;
+  function beginDrag(el, ev){
+    pushUndo();
+    const t=getTr(el);
+    drag={el, sx:ev.clientX, sy:ev.clientY, ox:t.x, oy:t.y};
+    el.setAttribute('contenteditable','false');
+    document.body.style.userSelect='none';
+    setStatus('移動中…');
+  }
+  function dragArm(el){ armNext=el; setStatus('要素をドラッグして移動'); }
+  let armNext=null;
+  document.addEventListener('pointerdown', e=>{
+    if(isChrome(e.target)) return;
+    let el=null;
+    if(e.altKey) el=e.target;                 // Option+ドラッグ
+    else if(armNext && (e.target===armNext||armNext.contains(e.target))) el=armNext;
+    if(!el) return;
+    e.preventDefault(); e.stopPropagation();
+    if(el!==selected) select(el);
+    beginDrag(el, e);
+    armNext=null;
+  }, true);
+  document.addEventListener('pointermove', e=>{
+    if(!drag) return;
+    const x=drag.ox+(e.clientX-drag.sx), y=drag.oy+(e.clientY-drag.sy);
+    setTr(drag.el, Math.round(x), Math.round(y));
+    const tx=panel.querySelector('#ri-tx'), ty=panel.querySelector('#ri-ty');
+    if(tx)tx.value=Math.round(x); if(ty)ty.value=Math.round(y);
+  });
+  document.addEventListener('pointerup', ()=>{
+    if(!drag) return;
+    const el=drag.el; drag=null; document.body.style.userSelect='';
+    if(el.hasAttribute('data-rin-edit')) el.setAttribute('contenteditable','plaintext-only');
+    setStatus('✅ 移動しました');
+  });
 
   /* ---------- inspector UI ---------- */
   function row(label, control){ return `<div class="rin-row"><label>${label}</label>${control}</div>`; }
@@ -194,6 +233,12 @@ EDITOR_JS = r"""
     html += row('シャドウ', `<select id="ri-sh">${SHADOW.map(([v,l])=>`<option value="${v}">${l}</option>`).join('')}</select>`);
     html += row('透明度', `<input type="range" id="ri-op" min="0" max="1" step="0.05" value="${c.opacity}">`);
 
+    const t=getTr(el);
+    html += `<h4>位置（移動）</h4>`;
+    html += row('横 X', `<input type="range" id="ri-tx" min="-400" max="400" value="${t.x}">`);
+    html += row('縦 Y', `<input type="range" id="ri-ty" min="-400" max="400" value="${t.y}">`);
+    html += `<div class="rin-btns"><button id="ri-tmove">✥ ドラッグ移動</button><button id="ri-treset">位置リセット</button></div>`;
+
     html += `<h4>余白</h4>`;
     html += row('内側(px)', `<input type="range" id="ri-pad" min="0" max="160" value="${px(c.paddingTop)}">`);
     html += row('外側(px)', `<input type="range" id="ri-mar" min="0" max="160" value="${px(c.marginTop)}">`);
@@ -208,7 +253,7 @@ EDITOR_JS = r"""
     if(isImg) html += `<button id="ri-img">🖼 画像差替</button>`;
     if(isSection) html += `<button id="ri-up">↑ 上へ</button><button id="ri-down">↓ 下へ</button><button id="ri-hide">👁 表示切替</button>`;
     html += `<button id="ri-dup">⧉ 複製</button><button id="ri-del">🗑 削除</button></div>`;
-    html += `<p class="rin-hint">文字は要素を直接クリックしても打ち替えられます。Esc で選択解除。</p>`;
+    html += `<p class="rin-hint">文字は直接クリックで打ち替え。Option(⌥)+ドラッグ、または「✥ ドラッグ移動」で位置を動かせます。Esc で選択解除。</p>`;
 
     panel.innerHTML = html;
     bindInspector(el, aosEl, isImg, isSection);
@@ -253,6 +298,12 @@ EDITOR_JS = r"""
     live('ri-sh','change',e=>{pushUndo();el.style.boxShadow=e.target.value;});
     live('ri-op','input',e=>{el.style.opacity=e.target.value;});
     live('ri-op','change',pushUndo);
+    // position
+    const tx=$('ri-tx'),ty=$('ri-ty');
+    if(tx){tx.addEventListener('input',()=>setTr(el,+tx.value,+(ty?ty.value:0)));tx.addEventListener('change',pushUndo);}
+    if(ty){ty.addEventListener('input',()=>setTr(el,+(tx?tx.value:0),+ty.value));ty.addEventListener('change',pushUndo);}
+    live('ri-treset','click',()=>{pushUndo();setTr(el,0,0);if(tx)tx.value=0;if(ty)ty.value=0;});
+    live('ri-tmove','click',()=>{dragArm(el);setStatus('✥ ドラッグで移動できます（Option+ドラッグでも可）');});
 
     // spacing
     live('ri-pad','input',e=>{el.style.padding=e.target.value+'px';});
@@ -357,6 +408,7 @@ EDITOR_JS = EDITOR_JS.replace(
     "doc.querySelectorAll('[class=\"\"]').forEach(n=>n.removeAttribute('class'));",
     "doc.querySelectorAll('[contenteditable]').forEach(n=>n.removeAttribute('contenteditable'));\n"
     "    doc.querySelectorAll('[data-rin-edit]').forEach(n=>n.removeAttribute('data-rin-edit'));\n"
+    "    doc.querySelectorAll('[data-rinx],[data-riny]').forEach(n=>{n.removeAttribute('data-rinx');n.removeAttribute('data-riny');});\n"
     "    doc.querySelectorAll('[class=\"\"]').forEach(n=>n.removeAttribute('class'));"
 )
 
