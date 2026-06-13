@@ -81,17 +81,27 @@ EDITOR_JS = r"""
   const picker = document.createElement('input');
   picker.type='file'; picker.accept='image/jpeg,image/png,image/webp'; picker.style.display='none';
   document.documentElement.appendChild(picker);
-  let imgTarget=null;
+  let imgTarget=null, imgMode='img';
+  function safeName(f){
+    const ext=(f.name.split('.').pop()||'jpg').toLowerCase().replace(/[^a-z]/g,'')||'jpg';
+    return 'up-'+Date.now()+'.'+ext;
+  }
   picker.onchange = async () => {
     const f=picker.files[0]; if(!f||!imgTarget) return;
     if(f.size>8*1024*1024){setStatus('❌ 8MB以下に');return;}
-    const name=(imgTarget.getAttribute('src')||'').split('?')[0].split('/').pop()||('img-'+Date.now()+'.jpg');
+    let name;
+    if(imgMode==='img') name=(imgTarget.getAttribute('src')||'').split('?')[0].split('/').pop()||safeName(f);
+    else name=safeName(f);
     setStatus('画像アップ中…');
     try{
       const r=await fetch('/upload?name='+encodeURIComponent(name),{method:'POST',body:f});
       const j=await r.json();
-      if(j.ok){imgTarget.src=j.name+'?v='+Date.now();setStatus('✅ 画像差替＆保存');}
-      else setStatus('❌ '+j.error);
+      if(j.ok){
+        pushUndo();
+        if(imgMode==='img'){imgTarget.src=j.name+'?v='+Date.now();}
+        else{imgTarget.style.backgroundImage=`url("${j.name}?v=${Date.now()}")`;imgTarget.style.backgroundSize='cover';imgTarget.style.backgroundPosition='center';}
+        setStatus('✅ 画像反映＆保存');
+      } else setStatus('❌ '+j.error);
     }catch(e){setStatus('❌ アップ失敗');}
   };
 
@@ -155,15 +165,33 @@ EDITOR_JS = r"""
       html += row('色', `<input type="color" id="ri-color" value="${rgb2hex(c.color)}">`);
       html += row('サイズ', `<input type="range" id="ri-fs" min="8" max="120" value="${px(c.fontSize)}"><input type="number" class="rin-num" id="ri-fsn" value="${px(c.fontSize)}">`);
       html += row('太さ', `<select id="ri-fw">${[300,400,500,600,700,900].map(w=>`<option ${px(c.fontWeight)===w?'selected':''}>${w}</option>`).join('')}</select>`);
+      const FONTS=[['',"そのまま"],["'Noto Sans JP',sans-serif",'ゴシック'],["'Zen Old Mincho',serif",'明朝'],["'Cinzel',serif",'装飾(英)']];
+      html += row('書体', `<select id="ri-ff">${FONTS.map(([v,l])=>`<option value="${v}" ${c.fontFamily.replace(/"/g,"'").indexOf(v.split(',')[0])>-1?'selected':''}>${l}</option>`).join('')}</select>`);
       html += row('行間', `<input type="range" id="ri-lh" min="1" max="3" step="0.05" value="${(parseFloat(c.lineHeight)/px(c.fontSize)||1.5).toFixed(2)}">`);
       html += row('字間(px)', `<input type="range" id="ri-ls" min="-2" max="20" step="0.5" value="${px(c.letterSpacing)||0}">`);
       html += `<div class="rin-btns rin-align">
         <button data-al="left">左</button><button data-al="center">中央</button><button data-al="right">右</button></div>`;
     }
 
-    html += `<h4>背景・枠</h4>`;
+    html += `<h4>背景</h4>`;
     html += row('背景色', `<input type="color" id="ri-bg" value="${rgb2hex(c.backgroundColor)}"><button class="ghost" id="ri-bgclear" style="padding:4px 8px;font-size:11px;border-radius:6px">透明</button>`);
+    const GRAD=[['','なし'],
+      ['linear-gradient(135deg,var(--bordeaux),var(--wine))','ボルドー'],
+      ['linear-gradient(135deg,var(--gold),var(--gold-2))','ゴールド'],
+      ['linear-gradient(160deg,var(--wine),var(--bg-2))','ダーク'],
+      ['radial-gradient(circle at 30% 20%,var(--bordeaux-2),var(--bg))','妖艶グロウ'],
+      ['linear-gradient(135deg,#1f1147,#3a0f18)','ナイト']];
+    html += row('グラデ', `<select id="ri-grad">${GRAD.map(([v,l])=>`<option value="${v}">${l}</option>`).join('')}</select>`);
+    html += `<div class="rin-btns"><button id="ri-bgimg">🖼 背景画像</button><button id="ri-bgimgclr">画像消す</button></div>`;
+    html += `<h4>枠線</h4>`;
+    html += row('太さ(px)', `<input type="range" id="ri-bw" min="0" max="12" value="${px(c.borderTopWidth)}">`);
+    html += row('色', `<input type="color" id="ri-bc" value="${rgb2hex(c.borderTopColor)}">`);
+    html += row('線種', `<select id="ri-bs">${['none','solid','dashed','dotted','double'].map(s=>`<option ${c.borderTopStyle===s?'selected':''}>${s}</option>`).join('')}</select>`);
     html += row('角丸(px)', `<input type="range" id="ri-br" min="0" max="80" value="${px(c.borderRadius)}">`);
+    html += `<h4>効果</h4>`;
+    const SHADOW=[['','なし'],['0 14px 40px rgba(0,0,0,.45)','影 弱'],['0 22px 60px rgba(0,0,0,.6)','影 強'],
+      ['0 0 30px rgba(212,175,106,.45)','金の光'],['0 0 36px rgba(155,34,55,.55)','紅の光']];
+    html += row('シャドウ', `<select id="ri-sh">${SHADOW.map(([v,l])=>`<option value="${v}">${l}</option>`).join('')}</select>`);
     html += row('透明度', `<input type="range" id="ri-op" min="0" max="1" step="0.05" value="${c.opacity}">`);
 
     html += `<h4>余白</h4>`;
@@ -204,12 +232,25 @@ EDITOR_JS = r"""
     live('ri-ls','change',pushUndo);
     panel.querySelectorAll('.rin-align button').forEach(b=>b.onclick=()=>{pushUndo();el.style.textAlign=b.dataset.al;});
 
-    // bg / border
+    // font
+    live('ri-ff','change',e=>{pushUndo();el.style.fontFamily=e.target.value;});
+    // bg
     live('ri-bg','input',e=>{el.style.backgroundColor=e.target.value;});
     live('ri-bg','change',pushUndo);
     live('ri-bgclear','click',()=>{pushUndo();el.style.backgroundColor='transparent';});
+    live('ri-grad','change',e=>{pushUndo();el.style.backgroundImage=e.target.value;if(e.target.value){el.style.backgroundSize='cover';}});
+    live('ri-bgimg','click',()=>{imgTarget=el;imgMode='bg';picker.value='';picker.click();});
+    live('ri-bgimgclr','click',()=>{pushUndo();el.style.backgroundImage='none';});
+    // border
+    live('ri-bw','input',e=>{el.style.borderWidth=e.target.value+'px';if(!el.style.borderStyle||el.style.borderStyle==='none')el.style.borderStyle='solid';});
+    live('ri-bw','change',pushUndo);
+    live('ri-bc','input',e=>{el.style.borderColor=e.target.value;});
+    live('ri-bc','change',pushUndo);
+    live('ri-bs','change',e=>{pushUndo();el.style.borderStyle=e.target.value;});
     live('ri-br','input',e=>{el.style.borderRadius=e.target.value+'px';});
     live('ri-br','change',pushUndo);
+    // effect
+    live('ri-sh','change',e=>{pushUndo();el.style.boxShadow=e.target.value;});
     live('ri-op','input',e=>{el.style.opacity=e.target.value;});
     live('ri-op','change',pushUndo);
 
@@ -229,7 +270,7 @@ EDITOR_JS = r"""
     });
 
     // actions
-    live('ri-img','click',()=>{imgTarget=el;picker.value='';picker.click();});
+    live('ri-img','click',()=>{imgTarget=el;imgMode='img';picker.value='';picker.click();});
     live('ri-up','click',()=>{pushUndo();const p=el.previousElementSibling;if(p&&p.matches('section,div.marquee'))el.parentNode.insertBefore(el,p);el.scrollIntoView({behavior:'smooth',block:'center'});});
     live('ri-down','click',()=>{pushUndo();const n=el.nextElementSibling;if(n&&n.matches('section,div.marquee'))el.parentNode.insertBefore(n,el);el.scrollIntoView({behavior:'smooth',block:'center'});});
     live('ri-hide','click',()=>{pushUndo();const h=el.classList.toggle('rin-hide-mark');if(h)el.setAttribute('data-rin-hide','1');else el.removeAttribute('data-rin-hide');setStatus(h?'公開時に非表示':'表示に戻す');});
