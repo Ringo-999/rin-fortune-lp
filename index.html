@@ -129,15 +129,47 @@ nav .cta:hover{background:var(--bordeaux);border-color:var(--bordeaux-2);color:#
 }
 @keyframes auraSpin{to{transform:translate(-50%,-50%) rotate(360deg)}}
 
-/* ゆらめくスモーク */
-.hero-smoke{
-  position:absolute;inset:0;z-index:0;pointer-events:none;mix-blend-mode:screen;opacity:.5;
-  background:
-    radial-gradient(40% 50% at 20% 30%,rgba(212,175,106,.10),transparent 70%),
-    radial-gradient(45% 55% at 80% 70%,rgba(155,34,55,.18),transparent 70%);
-  animation:smokeDrift 16s ease-in-out infinite alternate;
+/* 漂う太陽系 */
+.solar{
+  position:absolute;top:50%;left:62%;z-index:0;pointer-events:none;
+  width:min(72vmin,660px);height:min(72vmin,660px);
+  transform:translate(-50%,-50%);opacity:.6;
+  animation:solarDrift 22s ease-in-out infinite alternate;
 }
-@keyframes smokeDrift{from{transform:translate(0,0) scale(1)}to{transform:translate(-3%,4%) scale(1.08)}}
+.solar .sun{
+  position:absolute;top:50%;left:50%;width:30px;height:30px;transform:translate(-50%,-50%);
+  border-radius:50%;background:radial-gradient(circle at 40% 35%,#fff6e2,#f0d9a8 35%,#d4af6a 65%,rgba(155,34,55,.7));
+  box-shadow:0 0 28px 8px rgba(212,175,106,.5),0 0 60px 16px rgba(155,34,55,.25);
+  animation:sunGlow 5s ease-in-out infinite alternate;
+}
+.solar .orbit{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  border:1px solid rgba(212,175,106,.13);border-radius:50%;
+  animation:orbitSpin linear infinite;
+}
+.solar .orbit .planet{
+  position:absolute;top:-5px;left:50%;transform:translateX(-50%);
+  width:9px;height:9px;border-radius:50%;background:var(--gold-2);
+  box-shadow:0 0 10px rgba(212,175,106,.7);
+}
+.solar .o1{width:20%;height:20%;animation-duration:7s}
+.solar .o2{width:35%;height:35%;animation-duration:12s}
+.solar .o3{width:52%;height:52%;animation-duration:19s}
+.solar .o4{width:72%;height:72%;animation-duration:28s}
+.solar .o5{width:94%;height:94%;animation-duration:40s}
+.solar .o1 .planet{background:#e8d6b0;width:7px;height:7px}
+.solar .o2 .planet{background:#c98f6a}
+.solar .o3 .planet{background:#7ec8e3;width:11px;height:11px;box-shadow:0 0 10px rgba(126,200,227,.7)}
+.solar .o4 .planet{background:#9b2237;width:13px;height:13px;box-shadow:0 0 12px rgba(155,34,55,.8)}
+.solar .o5 .planet{background:#d4af6a;width:8px;height:8px}
+.solar .o4::after{ /* 土星の環 */
+  content:"";position:absolute;top:-9px;left:50%;width:30px;height:11px;
+  transform:translateX(-50%) rotate(-18deg);border:1px solid rgba(212,175,106,.55);border-radius:50%;
+}
+@keyframes orbitSpin{to{transform:translate(-50%,-50%) rotate(360deg)}}
+@keyframes sunGlow{from{box-shadow:0 0 24px 6px rgba(212,175,106,.4),0 0 50px 12px rgba(155,34,55,.2)}to{box-shadow:0 0 36px 12px rgba(212,175,106,.6),0 0 80px 22px rgba(155,34,55,.3)}}
+@keyframes solarDrift{from{transform:translate(-50%,-50%)}to{transform:translate(-46%,-54%)}}
+@media(max-width:760px){.solar{left:50%;top:38%;opacity:.4;width:90vmin;height:90vmin}}
 
 /* 回転する星座リング */
 .zodiac-ring{
@@ -195,7 +227,7 @@ nav .cta:hover{background:var(--bordeaux);border-color:var(--bordeaux-2);color:#
   .zodiac-ring{opacity:.5}
 }
 @media(prefers-reduced-motion:reduce){
-  .hero-aura,.hero-smoke,.zodiac-ring,.sticker,.sticker::after,.twk,.sticker.coin{animation:none}
+  .hero-aura,.solar,.solar .sun,.solar .orbit,.zodiac-ring,.sticker,.sticker::after,.twk,.sticker.coin{animation:none}
 }
 
 /* ===== Marquee ===== */
@@ -460,7 +492,14 @@ footer .logo{justify-self:center;margin-bottom:14px;font-size:1rem}
   </video>
   <div class="hero-video-overlay" aria-hidden="true"></div>
   <div class="hero-aura" aria-hidden="true"></div>
-  <div class="hero-smoke" aria-hidden="true"></div>
+  <div class="solar" aria-hidden="true">
+    <div class="sun"></div>
+    <div class="orbit o1"><span class="planet"></span></div>
+    <div class="orbit o2"><span class="planet"></span></div>
+    <div class="orbit o3"><span class="planet"></span></div>
+    <div class="orbit o4"><span class="planet"></span></div>
+    <div class="orbit o5"><span class="planet"></span></div>
+  </div>
   <div class="zodiac-ring" aria-hidden="true">
     <span class="z" style="transform:translateX(-50%) rotate(0deg)">♈</span>
     <span class="z" style="transform:translateX(-50%) rotate(45deg)">♓</span>
