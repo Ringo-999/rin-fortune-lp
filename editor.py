@@ -303,7 +303,7 @@ EDITOR_JS = r"""
     document.querySelectorAll('h1,h2,h3,h4,h5,p,span,a,li,td,small,button,div').forEach(el=>{
       if(isChrome(el)) return;
       const direct=[...el.childNodes].some(n=>n.nodeType===3&&n.textContent.trim());
-      if(direct&&el.children.length<=2){el.setAttribute('data-rin-edit','1');el.setAttribute('contenteditable','true');}
+      if(direct&&el.children.length<=2){el.setAttribute('data-rin-edit','1');el.setAttribute('contenteditable','plaintext-only');}
     });
   }
   enableText();
