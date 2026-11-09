@@ -3,7 +3,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>GAL占い師 Rin紅 | 金運鑑定 — 頑張るあなたに、運を。</title>
-<meta name="description" content="金運特化のGAL占い師「Rin紅」公式サイト。努力する人にこそ、運は流れ込む。あなたの金運の流れを読み、開く鑑定を。">
+<meta name="description" content="金運特化のGAL占い師「Rin紅」公式サイト。人生のロードマップ、羅針盤を使いこなせ。あなたの金運の流れを読み、開く鑑定を。">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Zen+Old+Mincho:wght@400;600;900&amp;family=Noto+Sans+JP:wght@300;400;500;700&amp;family=Cinzel:wght@400;500;600&amp;display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/aos@2.3.4/dist/aos.css">
@@ -55,7 +55,10 @@ nav .cta{
   border-radius:999px;position:relative;overflow:hidden;transition:.35s;
 }
 nav .cta:hover{background:var(--bordeaux);border-color:var(--bordeaux-2);color:#fff}
-@media(max-width:760px){nav a:not(.cta){display:none}}
+@media(max-width:760px){nav a:not(.cta):not(.ig){display:none} nav .ig span{display:none}
+  nav{gap:14px} nav .cta{white-space:nowrap;padding:9px 18px}
+  .logo{font-size:1rem} .logo small{font-size:.48rem;letter-spacing:.25em}
+  .hero h1{font-size:8.2vw!important;letter-spacing:.01em!important}}
 
 /* ===== Hero ===== */
 .hero{
@@ -391,6 +394,14 @@ footer{
   border-top:1px solid rgba(212,175,106,.12);letter-spacing:.15em;
 }
 footer .logo{justify-self:center;margin-bottom:14px;font-size:1rem}
+
+/* ===== Instagram ===== */
+.ig-ico{width:18px;height:18px;flex:none}
+nav .ig{display:inline-flex;align-items:center;gap:6px}
+.ig-link{display:inline-flex;align-items:center;gap:8px;color:var(--gold-2);text-decoration:none;font-size:.85rem;letter-spacing:.08em;border-bottom:1px solid rgba(212,175,106,.4);padding-bottom:3px;transition:.3s}
+.ig-link:hover{color:#fff;border-color:#fff}
+.ig-cta{margin-top:26px;text-align:center}
+footer .ig-link{margin:4px auto 14px;justify-self:center}
 </style>
 </head>
 <body>
@@ -402,6 +413,7 @@ footer .logo{justify-self:center;margin-bottom:14px;font-size:1rem}
     <a href="#concept">鑑定について</a>
     <a href="#profile">プロフィール</a>
     <a href="#price">料金</a>
+    <a href="https://www.instagram.com/rinkurenai369" target="_blank" rel="noopener" class="ig" aria-label="Instagram"><svg class="ig-ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="4.2" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="17.3" cy="6.7" r="1.2" fill="currentColor"/></svg><span>Instagram</span></a>
     <a href="#contact" class="cta">ご予約</a>
   </nav>
 </header>
@@ -442,8 +454,8 @@ footer .logo{justify-self:center;margin-bottom:14px;font-size:1rem}
   </div>
   <p class="kicker en" data-aos="fade-right">GAL FORTUNE TELLER KURENAI RIN / MONEY LUCK READING</p>
   <h1 data-aos="fade-up" data-aos-delay="100">
-    努力する人にこそ、<br>
-    <span class="ac">金運</span>は流れ込む。
+    人生のロードマップ、<br>
+    <span class="ac">羅針盤</span>を使いこなせ。
   </h1>
   <p class="sub" data-aos="fade-up" data-aos-delay="250">
     がむしゃらに頑張ってきたあなたへ。その努力が報われない理由は、力不足ではなく「お金の流れ」の滞りかもしれません。GAL占い師 Rin紅が、あなたの金運の水路を読み、開きます。
@@ -621,11 +633,13 @@ footer .logo{justify-self:center;margin-bottom:14px;font-size:1rem}
     <h2 data-aos="fade-up">あなたの努力に、運を味方に。</h2>
     <p data-aos="fade-up" data-aos-delay="100">頑張ってきた自分を、いちばん近くで応援する時間を。ご予約はInstagramのDMより承ります。</p>
     <a href="https://www.instagram.com/rinkurenai369" target="_blank" rel="noopener" class="btn btn-fill" data-aos="fade-up" data-aos-delay="200">鑑定を予約する<span class="arrow">→</span></a>
+    <p class="ig-cta" data-aos="fade-up" data-aos-delay="250"><a class="ig-link" href="https://www.instagram.com/rinkurenai369" target="_blank" rel="noopener"><svg class="ig-ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="4.2" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="17.3" cy="6.7" r="1.2" fill="currentColor"/></svg><span>Instagram @rinkurenai369</span></a></p>
   </div>
 </section>
 
 <footer>
   <div class="logo serif" style="color:var(--gold)">GAL占い師 Rin紅</div>
+  <a class="ig-link" href="https://www.instagram.com/rinkurenai369" target="_blank" rel="noopener"><svg class="ig-ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="4.2" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="17.3" cy="6.7" r="1.2" fill="currentColor"/></svg><span>Instagram @rinkurenai369</span></a>
   <p>© 2026 GAL Fortune Teller KURENAI RIN. All rights reserved.</p>
 </footer>
 
