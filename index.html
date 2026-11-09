@@ -2,8 +2,8 @@
 <html><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GAL占い師 りん紅 | 金運鑑定 — 頑張るあなたに、運を。</title>
-<meta name="description" content="金運特化のGAL占い師「りん紅」公式サイト。努力する人にこそ、運は流れ込む。あなたの金運の流れを読み、開く鑑定を。">
+<title>GAL占い師 Rin紅 | 金運鑑定 — 頑張るあなたに、運を。</title>
+<meta name="description" content="金運特化のGAL占い師「Rin紅」公式サイト。努力する人にこそ、運は流れ込む。あなたの金運の流れを読み、開く鑑定を。">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Zen+Old+Mincho:wght@400;600;900&amp;family=Noto+Sans+JP:wght@300;400;500;700&amp;family=Cinzel:wght@400;500;600&amp;display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/aos@2.3.4/dist/aos.css">
@@ -330,13 +330,14 @@ section{padding:130px 6vw;position:relative}
 
 /* ===== Price ===== */
 .price{background:linear-gradient(180deg,var(--bg),var(--bg-2))}
-.plans{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:22px}
+.plans{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px}
 .plan{
   border:1px solid var(--line);border-radius:6px;padding:42px 30px;
   background:rgba(255,255,255,.015);position:relative;
   transition:transform .4s,border-color .4s,background .4s;
 }
 .plan:hover{transform:translateY(-8px);border-color:var(--gold);background:var(--wine)}
+.plan.vip{border-color:var(--gold)}
 .plan.featured{border-color:var(--bordeaux-2);background:linear-gradient(160deg,var(--wine),var(--bg-2))}
 .plan.featured::before{
   content:"人気 No.1";position:absolute;top:-13px;left:24px;
@@ -352,6 +353,15 @@ section{padding:130px 6vw;position:relative}
 .plan li{padding:7px 0;border-top:1px dashed rgba(212,175,106,.18)}
 .plan li::before{content:"◆ ";color:var(--bordeaux-2);font-size:.6rem}
 .price .note{font-size:.72rem;color:var(--text);margin-top:30px;text-align:center;letter-spacing:.1em}
+.menu-list{margin-top:60px}
+.menu-title{font-family:'Zen Old Mincho',serif;font-size:1.2rem;color:var(--paper);text-align:center;margin-bottom:26px}
+.menu-title small{display:block;font-family:'Cinzel',serif;font-size:.62rem;color:var(--gold);letter-spacing:.3em;margin-top:6px}
+.menu-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px}
+.menu-item{border:1px solid var(--line);border-radius:6px;padding:18px 20px;background:rgba(255,255,255,.015)}
+.menu-item .no{font-size:.62rem;color:var(--gold);letter-spacing:.2em}
+.menu-item h4{font-family:'Zen Old Mincho',serif;font-size:1rem;color:var(--paper);margin:4px 0 6px}
+.menu-item p{font-size:.74rem;font-weight:300;line-height:1.8}
+.menu-plus{font-size:.76rem;color:var(--gold-2);text-align:center;margin-top:22px;letter-spacing:.05em}
 
 /* ===== Voice ===== */
 .voice{background:var(--bg)}
@@ -386,7 +396,7 @@ footer .logo{justify-self:center;margin-bottom:14px;font-size:1rem}
 <body>
 
 <header>
-  <div class="logo">GAL占い師 りん紅<small>KURENAI RIN — FORTUNE &amp; PROSPERITY</small></div>
+  <div class="logo">GAL占い師 Rin紅<small>KURENAI RIN — FORTUNE &amp; PROSPERITY</small></div>
   <nav>
     <a href="#message">想い</a>
     <a href="#concept">鑑定について</a>
@@ -436,10 +446,10 @@ footer .logo{justify-self:center;margin-bottom:14px;font-size:1rem}
     <span class="ac">金運</span>は流れ込む。
   </h1>
   <p class="sub" data-aos="fade-up" data-aos-delay="250">
-    がむしゃらに頑張ってきたあなたへ。その努力が報われない理由は、力不足ではなく「お金の流れ」の滞りかもしれません。GAL占い師 りん紅が、あなたの金運の水路を読み、開きます。
+    がむしゃらに頑張ってきたあなたへ。その努力が報われない理由は、力不足ではなく「お金の流れ」の滞りかもしれません。GAL占い師 Rin紅が、あなたの金運の水路を読み、開きます。
   </p>
   <div class="hero-cta" data-aos="fade-up" data-aos-delay="400">
-    <a href="#contact" class="btn btn-fill">鑑定を予約する<span class="arrow">→</span></a>
+    <a href="https://www.instagram.com/rinkurenai369" target="_blank" rel="noopener" class="btn btn-fill">鑑定を予約する<span class="arrow">→</span></a>
     <a href="#concept" class="btn btn-ghost en">ABOUT READING</a>
   </div>
   <div class="bg-en en">KURENAI</div>
@@ -453,16 +463,11 @@ footer .logo{justify-self:center;margin-bottom:14px;font-size:1rem}
         <h2 class="sec-title" data-aos="fade-up">運は、待つものではなく<br>整えるもの。</h2>
         <p data-aos="fade-up">「こんなに頑張っているのに、なぜかお金が残らない」——鑑定に来られる方の多くが、そう口にします。</p>
         <p data-aos="fade-up">わたしは、<span class="strong">頑張っている人が正当に報われる</span>ことを信じています。お金は努力を映す鏡。けれど鏡が曇っていれば、どれだけ磨いても光は届きません。</p>
-        <p data-aos="fade-up">四柱推命であなたの財運の器を読み、タロットでいまの流れの滞りを特定する。そして明日からの具体的な一手をお渡しする。それが、りん紅の金運鑑定です。</p>
+        <p data-aos="fade-up">四柱推命であなたの財運の器を読み、タロットでいまの流れの滞りを特定する。そして明日からの具体的な一手をお渡しする。それが、Rin紅の金運鑑定です。</p>
       </div>
       <div class="art" data-aos="fade-left" data-aos-delay="150">
         <img src="hero.jpg" alt="運命を描いた絵画" data-first-enter-image="true" style="cursor: pointer; outline: none;">
       </div>
-    </div>
-    <div class="stats">
-      <div class="stat" data-aos="fade-up"><div class="num">10,000<small>+</small></div><div class="label">累計鑑定件数</div></div>
-      <div class="stat" data-aos="fade-up" data-aos-delay="100"><div class="num">94<small>%</small></div><div class="label">リピーター率</div></div>
-      <div class="stat" data-aos="fade-up" data-aos-delay="200"><div class="num">15<small>年</small></div><div class="label">鑑定歴</div></div>
     </div>
   </div>
 </section><div class="marquee">
@@ -502,14 +507,14 @@ footer .logo{justify-self:center;margin-bottom:14px;font-size:1rem}
   <div class="inner">
     <div class="p-grid">
       <div class="p-photo" data-aos="fade-right">
-        <img src="rin.jpg" alt="GAL占い師 りん紅">
-        <div class="badge en">SINCE 2011</div>
+        <img src="rin.jpg" alt="GAL占い師 Rin紅">
+        <div class="badge en">MONEY FORTUNE</div>
       </div>
       <div>
         <p class="sec-label en" data-aos="fade-up">PROFILE</p>
-        <div class="p-name" data-aos="fade-up">りん紅<small class="en">KURENAI RIN</small></div>
+        <div class="p-name" data-aos="fade-up">Rin紅<small class="en">KURENAI RIN</small></div>
         <p class="p-role" data-aos="fade-up">金運・財運鑑定師 / 四柱推命・タロット</p>
-        <p data-aos="fade-up">幼少より人の心の機微を感じ取る力に恵まれ、東洋占術の師に学ぶこと十余年。これまで向き合った相談は一万件超。経営者、フリーランス、副業に挑む会社員——「頑張っているのに報われない」人の金運を専門に見続けてきた。</p>
+        <p data-aos="fade-up">子平推命・算命学・紫微斗数・九星気学などの東洋占術に、数秘術とタロット・オラクルカードを掛け合わせて読み解く金運特化の占い師。経営者、フリーランス、副業に挑む会社員——「頑張っているのに報われない」人の金運を専門に見ている。</p>
         <p data-aos="fade-up">信条は「運は努力の伴走者」。占いに依存させるのではなく、相談者が自分の足で稼ぎ、自分の手で運をつかむための鑑定に徹する。歯に衣着せぬ的確さと、頑張る人への深い敬意をあわせ持つ。</p>
         <div class="tags" data-aos="fade-up">
           <span>金運・財運</span><span>事業運</span><span>転職・独立</span><span>四柱推命</span><span>九星気学</span><span>タロット</span>
@@ -526,58 +531,85 @@ footer .logo{justify-self:center;margin-bottom:14px;font-size:1rem}
     <div class="plans">
       <div class="plan" data-aos="fade-up">
         <p class="p-en">TRIAL</p>
-        <h3>はじめての金運鑑定</h3>
-        <p class="time">20分 / オンライン可</p>
+        <h3>羅針盤初級</h3>
+        <p class="time">鑑定書PDFでお届け</p>
         <div class="fee"><small>¥</small>5,000</div>
         <ul>
-          <li>いまの金運の流れを診断</li>
-          <li>滞りポイントの特定</li>
+          <li>占い鑑定 1種類（下の10項目から選択）</li>
+          <li>鑑定書PDF</li>
         </ul>
       </div>
       <div class="plan featured" data-aos="fade-up" data-aos-delay="100">
         <p class="p-en">STANDARD</p>
-        <h3>金運開花鑑定</h3>
-        <p class="time">60分 / オンライン可</p>
-        <div class="fee"><small>¥</small>18,000</div>
+        <h3>羅針盤ロードマップ</h3>
+        <p class="time">鑑定書PDFでお届け</p>
+        <div class="fee"><small>¥</small>20,000</div>
         <ul>
-          <li>四柱推命による財運の器の鑑定</li>
-          <li>タロットで現状の流れを精査</li>
-          <li>攻め時・守り時の年間カレンダー</li>
-          <li>明日からの具体的アクション</li>
+          <li>占い鑑定 3種類（下の10項目から選択）</li>
+          <li>タロット＆オラクル</li>
+          <li>鑑定書PDF</li>
         </ul>
       </div>
       <div class="plan" data-aos="fade-up" data-aos-delay="200">
         <p class="p-en">PREMIUM</p>
-        <h3>事業・人生設計鑑定</h3>
-        <p class="time">90分 / 対面・オンライン</p>
-        <div class="fee"><small>¥</small>30,000</div>
+        <h3>風水羅針盤</h3>
+        <p class="time">鑑定書PDFでお届け</p>
+        <div class="fee"><small>¥</small>50,000</div>
         <ul>
-          <li>事業運・独立タイミング鑑定</li>
-          <li>5年間の金運ロードマップ</li>
-          <li>アフターフォロー1回つき</li>
+          <li>占い鑑定 10種類（下の10項目すべて）</li>
+          <li>タロット＆オラクル</li>
+          <li>鑑定書PDF</li>
+        </ul>
+      </div>
+      <div class="plan vip" data-aos="fade-up" data-aos-delay="300">
+        <p class="p-en">VIP</p>
+        <h3>VIP日運羅盤</h3>
+        <p class="time">鑑定書PDF＋日運羅盤</p>
+        <div class="fee"><small>¥</small>100,000</div>
+        <ul>
+          <li>占い鑑定 10種類（下の10項目すべて）</li>
+          <li>タロット＆オラクル</li>
+          <li>鑑定書PDF</li>
+          <li>日運羅盤：占いたい大事な日 7日間つき（その日ごとにお届け）</li>
         </ul>
       </div>
     </div>
-    <p class="note">※延長は10分ごとに ¥2,000 ／ すべてのメニューでオンライン鑑定に対応しています。</p>
+    <div class="menu-list" data-aos="fade-up">
+      <h3 class="menu-title">鑑定でみる占い項目<small>全10種類</small></h3>
+      <div class="menu-grid">
+        <div class="menu-item"><span class="no en">01</span><h4>子平推命</h4><p>生まれた日の命式から、本質・才能と運を開く「喜神」を読み解きます</p></div>
+        <div class="menu-item"><span class="no en">02</span><h4>算命学</h4><p>人体星図から、性格の役割と生き方の軸を読み解きます</p></div>
+        <div class="menu-item"><span class="no en">03</span><h4>紫微斗数</h4><p>命盤の12の宮から、財運・仕事運・人間関係を読み解きます</p></div>
+        <div class="menu-item"><span class="no en">04</span><h4>数秘術</h4><p>生年月日の数字から、使命とその年のテーマを読み解きます</p></div>
+        <div class="menu-item"><span class="no en">05</span><h4>九星気学</h4><p>本命星と年盤から、その年の運気と吉方位を読み解きます</p></div>
+        <div class="menu-item"><span class="no en">06</span><h4>八宅風水</h4><p>本命卦から、住まいや仕事場で力をくれる方位を読み解きます</p></div>
+        <div class="menu-item"><span class="no en">07</span><h4>奇門遁甲</h4><p>日盤・時盤から、動くと良い日と方位を読み解きます</p></div>
+        <div class="menu-item"><span class="no en">08</span><h4>大運・年運</h4><p>10年ごとの大きな流れと、これからの年ごとの運勢を読み解きます</p></div>
+        <div class="menu-item"><span class="no en">09</span><h4>月運カレンダー</h4><p>1年の月ごとの運気と、攻め時・守り時をお伝えします</p></div>
+        <div class="menu-item"><span class="no en">10</span><h4>相性</h4><p>パートナーや仕事相手との相性を読み解きます</p></div>
+      </div>
+      <p class="menu-plus">STANDARD・PREMIUM・VIPには、タロット（78枚）とオラクルカード（44枚）のリーディングが付きます。</p>
+    </div>
+    <p class="note">※鑑定結果はPDFの鑑定書でお届けします（VIPの日運羅盤は、占いたい日ごとに別途お届けします）。</p>
   </div>
 </section>
 
 <section class="voice" style="background-image: none; background-color: rgb(66, 0, 49);">
   <div class="inner">
-    <p class="sec-label en" data-aos="fade-right">VOICES</p>
-    <h2 class="sec-title" data-aos="fade-up">頑張る人たちの、その後。</h2>
+    <p class="sec-label en" data-aos="fade-right">FOR YOU</p>
+    <h2 class="sec-title" data-aos="fade-up">こんな想いを抱える、<br>頑張るあなたへ。</h2>
     <div class="v-grid">
       <div class="v-card" data-aos="fade-up">
-        <p>「攻める年」と言われた年に思い切って独立。言われた通り3年目で軌道に乗りました。背中を押してくれた鑑定でした。</p>
-        <p class="who">40代 / 飲食店経営</p>
+        <p>「独立や開業、動くならいつがいい？」<br>攻め時・守り時を、運の流れから見極めたい。</p>
+        <p class="who">経営者・独立を考えている方へ</p>
       </div>
       <div class="v-card" data-aos="fade-up" data-aos-delay="100">
-        <p>副業が伸び悩んでいた理由を「届け方の滞り」と指摘され、提案された動き方に変えたら半年で収入が倍に。</p>
-        <p class="who">30代 / 会社員・副業</p>
+        <p>「副業を頑張っているのに、なかなか伸びない」<br>どこで流れが滞っているのか、知りたい。</p>
+        <p class="who">会社員・副業に挑む方へ</p>
       </div>
       <div class="v-card" data-aos="fade-up" data-aos-delay="200">
-        <p>占いというより、運気を踏まえた経営相談。頑張りを否定せず、努力の向け先を整えてくれるのが りん先生です。</p>
-        <p class="who">50代 / 会社役員</p>
+        <p>「働いているのに、なぜかお金が残らない」<br>努力の向け先を、整えたい。</p>
+        <p class="who">頑張りが報われないと感じている方へ</p>
       </div>
     </div>
   </div>
@@ -587,13 +619,13 @@ footer .logo{justify-self:center;margin-bottom:14px;font-size:1rem}
   <div class="inner">
     <span class="en-big en" data-aos="zoom-in">FORTUNE FAVORS YOU</span>
     <h2 data-aos="fade-up">あなたの努力に、運を味方に。</h2>
-    <p data-aos="fade-up" data-aos-delay="100">頑張ってきた自分を、いちばん近くで応援する時間を。ご予約は下記より承ります。</p>
-    <a href="#" class="btn btn-fill" data-aos="fade-up" data-aos-delay="200">鑑定を予約する<span class="arrow">→</span></a>
+    <p data-aos="fade-up" data-aos-delay="100">頑張ってきた自分を、いちばん近くで応援する時間を。ご予約はInstagramのDMより承ります。</p>
+    <a href="https://www.instagram.com/rinkurenai369" target="_blank" rel="noopener" class="btn btn-fill" data-aos="fade-up" data-aos-delay="200">鑑定を予約する<span class="arrow">→</span></a>
   </div>
 </section>
 
 <footer>
-  <div class="logo serif" style="color:var(--gold)">GAL占い師 りん紅</div>
+  <div class="logo serif" style="color:var(--gold)">GAL占い師 Rin紅</div>
   <p>© 2026 GAL Fortune Teller KURENAI RIN. All rights reserved.</p>
 </footer>
 
