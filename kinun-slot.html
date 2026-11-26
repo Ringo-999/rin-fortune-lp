@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>金運スロット診断｜GAL占い師Rin紅</title>
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/icon-32.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="description" content="生年月日を入れてスロットを回すだけ。あなたの金運タイプと今日の金運がわかる無料診断。">
+<style>
+  :root{
+    --pink:#ff4fa3; --pink2:#ffb3d9; --gold:#f5c542; --gold2:#fff1b8;
+    --ink:#3a1830; --bg1:#fff0f7; --bg2:#ffe3f1; --white:#fff;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:"Hiragino Maru Gothic ProN","Hiragino Sans","Yu Gothic",sans-serif;
+    color:var(--ink);
+    background:radial-gradient(circle at 20% 10%,#fff 0,var(--bg1) 40%,var(--bg2) 100%);
+    min-height:100vh; display:flex; justify-content:center; padding:24px 14px 48px;
+  }
+  .wrap{width:100%;max-width:440px}
+  header{text-align:center;margin-bottom:18px}
+  .badge{display:inline-block;background:var(--ink);color:var(--gold);font-size:12px;
+    letter-spacing:.15em;padding:4px 12px;border-radius:999px;margin-bottom:10px}
+  h1{font-size:30px;line-height:1.25;color:var(--pink);
+    text-shadow:2px 2px 0 var(--gold2),3px 3px 0 var(--gold)}
+  .sub{font-size:14px;margin-top:8px}
+  .card{background:var(--white);border:3px solid var(--ink);border-radius:22px;
+    box-shadow:6px 6px 0 var(--ink);padding:20px;margin-bottom:22px}
+  label{font-weight:bold;font-size:15px;display:block;margin-bottom:8px}
+  .dob{display:flex;gap:6px}
+  select{flex:1;font-size:16px;padding:10px 6px;border:2px solid var(--ink);border-radius:12px;
+    background:#fff;color:var(--ink);font-family:inherit}
+  .err{color:#d11;font-size:13px;margin-top:8px;min-height:1em}
+  /* slot */
+  .machine{background:linear-gradient(180deg,var(--pink),#e02f88);border:3px solid var(--ink);
+    border-radius:20px;padding:14px;margin:18px 0 14px;box-shadow:inset 0 -6px 0 rgba(0,0,0,.15)}
+  .lamp{text-align:center;color:var(--gold2);font-weight:bold;letter-spacing:.2em;font-size:13px;margin-bottom:8px}
+  .reels{display:flex;gap:8px}
+  .reel{flex:1;height:86px;background:#fff;border:3px solid var(--ink);border-radius:12px;
+    overflow:hidden;position:relative}
+  .strip{position:absolute;left:0;right:0;top:0;transition:none}
+  .sym{height:80px;display:flex;align-items:center;justify-content:center;font-size:40px}
+  .reel-label{text-align:center;font-size:11px;color:#fff;margin-top:6px;font-weight:bold;flex:1}
+  .labels{display:flex;gap:8px}
+  button.spin{width:100%;font-size:20px;font-weight:bold;font-family:inherit;color:var(--ink);
+    background:linear-gradient(180deg,var(--gold2),var(--gold));border:3px solid var(--ink);
+    border-radius:999px;padding:14px;cursor:pointer;box-shadow:0 5px 0 var(--ink);transition:transform .08s}
+  button.spin:active{transform:translateY(4px);box-shadow:0 1px 0 var(--ink)}
+  button.spin:disabled{opacity:.6;cursor:wait}
+  /* result */
+  #result{display:none}
+  #result.show{display:block;animation:pop .5s ease}
+  @keyframes pop{0%{transform:scale(.9);opacity:0}100%{transform:scale(1);opacity:1}}
+  .type-kanji{font-size:64px;font-weight:bold;color:var(--pink);text-align:center;line-height:1;
+    text-shadow:3px 3px 0 var(--gold)}
+  .type-name{text-align:center;font-size:22px;font-weight:bold;margin:6px 0 2px}
+  .type-catch{text-align:center;font-size:14px;margin-bottom:14px}
+  .stars{text-align:center;font-size:30px;color:var(--gold);letter-spacing:4px;
+    text-shadow:1px 1px 0 var(--ink)}
+  .today-title{text-align:center;font-weight:bold;margin-top:4px}
+  .today-msg{background:var(--bg1);border-radius:14px;padding:12px;font-size:14px;line-height:1.7;margin:10px 0 14px}
+  dl{display:grid;grid-template-columns:auto 1fr;gap:8px 12px;font-size:14px;line-height:1.6}
+  dt{font-weight:bold;color:var(--pink);white-space:nowrap}
+  .cta{display:block;text-align:center;text-decoration:none;font-weight:bold;color:#fff;
+    background:var(--ink);border-radius:999px;padding:14px;margin-top:16px;font-size:16px}
+  .cta small{display:block;font-weight:normal;font-size:12px;color:var(--gold2);margin-top:2px}
+  .row{display:flex;gap:8px;margin-top:10px}
+  .ghost{flex:1;text-align:center;font-family:inherit;font-size:14px;font-weight:bold;color:var(--ink);
+    background:#fff;border:2px solid var(--ink);border-radius:999px;padding:10px;cursor:pointer;text-decoration:none}
+  .note{font-size:11px;text-align:center;color:#8a6a7d;margin-top:8px}
+  footer{text-align:center;font-size:11px;color:#8a6a7d}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <span class="badge">FREE 金運診断</span>
+    <h1>💰金運スロット💰<br>診断</h1>
+    <p class="sub">誕生日を入れてスロットを回すだけ♡<br>あなたの<b>金運タイプ</b>と<b>今日の金運</b>がわかるよ</p>
+  </header>
+
+  <section class="card">
+    <label>生年月日</label>
+    <div class="dob">
+      <select id="y" aria-label="年"></select>
+      <select id="m" aria-label="月"></select>
+      <select id="d" aria-label="日"></select>
+    </div>
+    <p class="err" id="err"></p>
+
+    <div class="machine">
+      <div class="lamp">★ JACKPOT CHANCE ★</div>
+      <div class="reels">
+        <div class="reel"><div class="strip" id="r0"></div></div>
+        <div class="reel"><div class="strip" id="r1"></div></div>
+        <div class="reel"><div class="strip" id="r2"></div></div>
+      </div>
+      <div class="labels">
+        <div class="reel-label">金運タイプ</div>
+        <div class="reel-label">今日の金運</div>
+        <div class="reel-label">開運カラー</div>
+      </div>
+    </div>
+    <button class="spin" id="spin">スロットを回す！</button>
+  </section>
+
+  <section class="card" id="result" aria-live="polite">
+    <div class="type-kanji" id="kanji"></div>
+    <div class="type-name" id="tname"></div>
+    <div class="type-catch" id="tcatch"></div>
+
+    <div class="today-title">今日の金運</div>
+    <div class="stars" id="stars"></div>
+    <div class="today-msg" id="tmsg"></div>
+
+    <dl>
+      <dt>得意な稼ぎ方</dt><dd id="strong"></dd>
+      <dt>注意ポイント</dt><dd id="weak"></dd>
+      <dt>開運カラー</dt><dd id="color"></dd>
+      <dt>開運アクション</dt><dd id="action"></dd>
+    </dl>
+
+    <a class="cta" id="cta" href="https://www.instagram.com/rinkurenai369" target="_blank" rel="noopener">
+      もっと詳しく金運を鑑定してもらう
+      <small>GAL占い師Rin紅のInstagramで予約受付中</small>
+    </a>
+    <div class="row">
+      <a class="ghost" id="share" target="_blank" rel="noopener">結果をXでシェア</a>
+      <button class="ghost" id="again">もう一回</button>
+    </div>
+    <p class="note">※十干（生まれた日の干）をもとにしたエンタメ診断です</p>
+  </section>
+
+  <footer><a href="/" style="color:inherit">GAL占い師Rin紅 トップへ</a><br>© GAL占い師Rin紅</footer>
+</div>
+
+<script>
+(function(){
+  // ---- 十干データ ----
+  var STEMS = [
+    {k:"甲",n:"大樹タイプ",c:"コツコツ太らせる、ブレない稼ぎ方の人",el:0,
+     s:"長く続ける仕事・積み立て。時間を味方にするほど増えるよ",
+     w:"頑固になってチャンスを見送りがち。たまには乗ってみて",col:"フォレストグリーン",colE:"🟢",
+     a:"お財布の中のレシートを全部出して整理する"},
+    {k:"乙",n:"お花タイプ",c:"人とのつながりでお金が咲く人",el:0,
+     s:"紹介・口コミ・チーム。愛され力がそのまま収入になる",
+     w:"頼まれると断れなくて出費が増えがち",col:"ミントグリーン",colE:"🌿",
+     a:"お世話になった人に一言お礼のメッセージを送る"},
+    {k:"丙",n:"太陽タイプ",c:"派手に稼いで派手に使う、華のある人",el:1,
+     s:"目立つこと・発信・人前に出る仕事。注目＝お金",
+     w:"ノリで買い物しがち。カートに入れて一晩寝かせて",col:"サンセットオレンジ",colE:"🟠",
+     a:"SNSで自分の好きなものを1つ発信する"},
+    {k:"丁",n:"キャンドルタイプ",c:"センスと技でじわっと稼ぐ職人肌",el:1,
+     s:"専門スキル・クリエイティブ。こだわりが単価を上げる",
+     w:"安売りしがち。自分の価値はもっと高いよ",col:"ローズレッド",colE:"🔴",
+     a:"自分の作品やサービスの値段を見直してみる"},
+    {k:"戊",n:"マウンテンタイプ",c:"どっしり貯める、安定の金運",el:2,
+     s:"貯金・不動産・長く持つもの。守りの強さはNo.1",
+     w:"慎重すぎて動き出しが遅め。小さく試すのがコツ",col:"キャメルベージュ",colE:"🟤",
+     a:"先取り貯金の金額をちょっとだけ増やす"},
+    {k:"己",n:"お庭タイプ",c:"育てて増やす、じっくり型",el:2,
+     s:"人や物を育てること。教える・まとめる仕事が◎",
+     w:"人のために使いすぎがち。自分にもご褒美を",col:"ハニーイエロー",colE:"🟡",
+     a:"観葉植物かお花を1つ部屋に飾る"},
+    {k:"庚",n:"ブレードタイプ",c:"勝負どころで一気につかむ人",el:3,
+     s:"決断の速さ・交渉・営業。ここぞの一手で大きく動く",
+     w:"一発勝負に偏りがち。守りのお金は別にしておいて",col:"シルバー",colE:"⚪",
+     a:"迷っていたことを1つ今日決める"},
+    {k:"辛",n:"ジュエルタイプ",c:"ブランド力で稼ぐ、キラキラの人",el:3,
+     s:"見せ方・美意識・高単価。磨くほど価値が上がる",
+     w:"見栄の出費に注意。本当に好きな物だけ選んで",col:"パールホワイト",colE:"💎",
+     a:"アクセサリーかお財布をきれいに磨く"},
+    {k:"壬",n:"オーシャンタイプ",c:"流れに乗ってドーンと増やす人",el:4,
+     s:"トレンド・海外・新しい仕組み。波に乗るのが天才的",
+     w:"気が大きくなって使いすぎ注意。上限を決めて",col:"ネイビー",colE:"🔵",
+     a:"気になっている新しいサービスを1つ調べる"},
+    {k:"癸",n:"レイン（雨）タイプ",c:"ちょこちょこ積み上げる、しなやか金運",el:4,
+     s:"副業・小さな収入源をいくつも。気づけば大きくなる",
+     w:"小さな出費の積み重ねに注意。サブスクを見直して",col:"ラベンダー",colE:"🟣",
+     a:"使っていないサブスクを1つ解約する"}
+  ];
+  var EL = ["木","火","土","金","水"];
+
+  // 今日の金運：自分の五行と今日の日干の五行の関係
+  var TODAY = {
+    zai:{s:5,m:"今日は金運MAXの日！自分から取りに行くとお金が入ってきやすいよ。値段交渉・営業・応募は今日がチャンス✨"},
+    shoku:{s:4,m:"アイデアがお金を生む日。思いついたことはメモして、1つ形にしてみて💡"},
+    hi:{s:3,m:"人と一緒にいると楽しいけど、おごり・ノリ買いに注意。財布のひもはちょっと締めて👛"},
+    in:{s:3,m:"もらう・教わる運の日。勉強や情報収集にお金を使うと後で返ってくるよ📚"},
+    kan:{s:2,m:"今日は守りの日。大きな買い物や契約は一晩寝かせてからにして🛡️"}
+  };
+
+  // 日干：1949-10-01 を甲子（0番）として計算
+  function dayIndex(y,m,d){
+    var base = Date.UTC(1949,9,1);
+    var t = Date.UTC(y,m-1,d);
+    var days = Math.round((t-base)/86400000);
+    return ((days%60)+60)%60;
+  }
+  function stemOf(y,m,d){ return dayIndex(y,m,d)%10; }
+  function relation(me,today){
+    var a=STEMS[me].el, b=STEMS[today].el;
+    if(a===b) return "hi";
+    if((a+1)%5===b) return "shoku";   // 自分が生む
+    if((a+2)%5===b) return "zai";     // 自分が剋す＝財
+    if((b+1)%5===a) return "in";      // 自分を生む
+    return "kan";                     // 自分を剋す
+  }
+
+  // ---- フォーム ----
+  var ys=document.getElementById("y"), ms=document.getElementById("m"), ds=document.getElementById("d");
+  var nowY=new Date().getFullYear();
+  function opt(sel,v,t){var o=document.createElement("option");o.value=v;o.textContent=t;sel.appendChild(o);}
+  opt(ys,"","年");for(var i=nowY;i>=1930;i--)opt(ys,i,i+"年");
+  opt(ms,"","月");for(i=1;i<=12;i++)opt(ms,i,i+"月");
+  function fillDays(){
+    var cur=ds.value;ds.innerHTML="";opt(ds,"","日");
+    var y=+ys.value||2000,m=+ms.value||1;
+    var n=new Date(y,m,0).getDate();
+    for(var j=1;j<=n;j++)opt(ds,j,j+"日");
+    if(cur&&+cur<=n)ds.value=cur;
+  }
+  ys.onchange=fillDays;ms.onchange=fillDays;fillDays();
+  ys.value="1990";fillDays();
+
+  // ---- スロット ----
+  var SYMS=[["💰","💎","👑","🔮","⭐","🍀"],["⭐","✨","💸","🌙","💫","🔥"],["💗","💛","💚","💙","💜","🤍"]];
+  var REPEAT=8, H=80;
+  var strips=[0,1,2].map(function(i){return document.getElementById("r"+i);});
+  function build(i,finalSym){
+    var html="";
+    for(var r=0;r<REPEAT;r++)for(var s=0;s<SYMS[i].length;s++)html+='<div class="sym">'+SYMS[i][s]+'</div>';
+    html+='<div class="sym">'+finalSym+'</div>';
+    strips[i].innerHTML=html;
+    strips[i].style.transition="none";
+    strips[i].style.transform="translateY(0)";
+  }
+  strips.forEach(function(_,i){build(i,SYMS[i][0]);strips[i].style.transform="translateY("+(-(REPEAT*SYMS[i].length)*H+3)+"px)";});
+
+  function spinTo(i,finalSym,ms){
+    build(i,finalSym);
+    void strips[i].offsetHeight;
+    strips[i].style.transition="transform "+ms+"ms cubic-bezier(.15,.7,.2,1)";
+    strips[i].style.transform="translateY("+(-(REPEAT*SYMS[i].length)*H+3)+"px)";
+  }
+
+  var btn=document.getElementById("spin"), err=document.getElementById("err"), res=document.getElementById("result");
+  function $(id){return document.getElementById(id);}
+
+  btn.onclick=function(){
+    var y=+ys.value,m=+ms.value,d=+ds.value;
+    if(!y||!m||!d){err.textContent="生年月日を選んでね♡";return;}
+    err.textContent="";
+    var me=stemOf(y,m,d);
+    var now=new Date();
+    var td=stemOf(now.getFullYear(),now.getMonth()+1,now.getDate());
+    var rel=TODAY[relation(me,td)];
+    var t=STEMS[me];
+
+    btn.disabled=true;res.classList.remove("show");res.style.display="none";
+    spinTo(0,t.k,1600);
+    spinTo(1,rel.s>=5?"💸":rel.s>=4?"✨":rel.s>=3?"⭐":"🌙",2200);
+    spinTo(2,t.colE,2800);
+
+    setTimeout(function(){
+      $("kanji").textContent=t.k;
+      $("tname").textContent=t.k+"（"+EL[t.el]+"）の"+t.n;
+      $("tcatch").textContent=t.c;
+      $("stars").textContent="★".repeat(rel.s)+"☆".repeat(5-rel.s);
+      $("tmsg").textContent=rel.m;
+      $("strong").textContent=t.s;
+      $("weak").textContent=t.w;
+      $("color").textContent=t.colE+" "+t.col;
+      $("action").textContent=t.a;
+      var txt="私は「"+t.k+"の"+t.n+"」でした💰今日の金運は"+"★".repeat(rel.s)+"！ #金運スロット診断 #GAL占い師Rin紅";
+      $("share").href="https://twitter.com/intent/tweet?text="+encodeURIComponent(txt)+"&url="+encodeURIComponent(location.href.split("?")[0]);
+      res.style.display="block";
+      requestAnimationFrame(function(){res.classList.add("show");});
+      res.scrollIntoView({behavior:"smooth",block:"start"});
+      btn.disabled=false;btn.textContent="もう一回まわす！";
+    },3000);
+  };
+  $("again").onclick=function(){window.scrollTo({top:0,behavior:"smooth"});};
+
+})();
+</script>
+</body>
+</html>
